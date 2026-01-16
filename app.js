@@ -15,6 +15,61 @@ const toolbarButtons = document.querySelectorAll("button[data-style]");
 // --- Unicode maps (MVP): A-Z a-z 0-9 para bold/italic/mono
 // Nota: Italic no cubre bien todo en algunos alfabetos; lo dejamos simple.
 
+const ICON_GROUPS = {
+  "Checks & Crosses": [
+    "✅","✔️","☑️","🟩","❌","✖️","❎","🟥",
+    "🟢","🔴","🟡"
+  ],
+
+  "Prioridad / Atención": [
+    "⚠️","🚨","🔥","⚡","❗","❓","‼️","⁉️"
+  ],
+
+  "Acción / Trabajo": [
+    "🛠️","🔧","⚙️","📌","🎯","🚀","📍","🔁"
+  ],
+
+  "Ideas / Pensar": [
+    "💡","🧠","📐","📏","🧩","🔍"
+  ],
+
+  "Documentos / Datos": [
+    "📝","📄","📚","📊","📈","📉","🧾","📑"
+  ],
+
+  "Comunicación / Personas": [
+    "👥","🤝","💬","📣","📞","✉️","🔔"
+  ],
+
+  "Tiempo / Proceso": [
+    "⏱️","⌛","🕒","🗓️","🔄","➡️","⬅️","⬆️","⬇️"
+  ],
+
+  "Bullets & Separadores": [
+    "•","◦","▪️","▫️","🔹","🔸","➜","→","—","–"
+  ]
+};
+
+function populateIcons() {
+  iconSelect.innerHTML = `<option value="">Insertar ícono…</option>`;
+
+  for (const groupName in ICON_GROUPS) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = groupName;
+
+    ICON_GROUPS[groupName].forEach(icon => {
+      const opt = document.createElement("option");
+      opt.value = icon;
+      opt.textContent = icon;
+      optgroup.appendChild(opt);
+    });
+
+    iconSelect.appendChild(optgroup);
+  }
+}
+
+populateIcons();
+
 function codePoint(ch) {
   return ch.codePointAt(0);
 }
