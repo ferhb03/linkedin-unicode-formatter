@@ -235,12 +235,12 @@ function walkNode(node, style) {
       return;
     }
 
-    // Block-ish elements: add newline after
-    if (tag === "div" || tag === "p") {
-      out += walkNode(child, next);
-      out += "\n";
-      return;
-    }
+  // Block elements: force newline separation
+  if (tag === "div" || tag === "p") {
+  const content = walkNode(child, next).trim();
+  if (content) out += content + "\n\n";
+  return;
+}
 
     // Lists: export li as bullet lines
     if (tag === "ul" || tag === "ol") {
