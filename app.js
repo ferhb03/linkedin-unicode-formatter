@@ -134,6 +134,39 @@ function insertTextAtCursor(text) {
   sel.addRange(range);
 }
 
+function insertPlainTextWithNewlines(text) {
+  editor.focus();
+
+  // Normalizar saltos de línea (Windows/Word/Docs)
+  const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) {
+    // Si no hay selección, agregamos al final
+    editor.textContent += normalized;
+    return;
+  }
+
+  const range = sel.getRangeAt(0);
+  range.deleteContents();
+
+  // Insertar líneas con <br> para respetar formato de párrafo visual
+  const parts = normalized.split("\n");
+  parts.forEach((part, idx) => {
+    range.insertNode(document.createTextNode(part));
+    if (idx < parts.length - 1) {
+      range.insertNode(document.createElement("br"));
+    }
+  });
+
+  // Mover caret al final de lo insertado
+  sel.removeAllRanges();
+  const newRange = document.createRange();
+  newRange.selectNodeContents(editor);
+  newRange.collapse(false);
+  sel.addRange(newRange);
+}
+
 function insertNewlinesAround(text) {
   // inserta con saltos de línea respetando estilo "texto"
   insertTextAtCursor(text);
@@ -340,6 +373,21 @@ clearBtn.addEventListener("click", () => {
 
 // ---------- Live sync ----------
 editor.addEventListener("input", syncOutput);
+
+editor.addEventListener("paste", (e) => {
+  e.preventDefault();
+
+  // 1) Tomar texto plano
+  const text =
+    (e.clipboardData || window.clipboardData).getData("text/plain") || "";
+
+  // 2) Insertar respetando saltos de línea
+  insertPlainTextWithNewlines(text);
+
+  // 3) Actualizar output
+  syncOutput();
+});
+
 
 // Init
 syncOutput();
