@@ -1,7 +1,10 @@
 // ============================================
-// LinkedIn Unicode Formatter - app.js (FULL)
+// LinkedIn Unicode Formatter - app.js (FULL, CLEAN)
 // Editor (izq): texto normal con formato visual
 // Output (der): Unicode listo para copiar/pegar
+// - Pegar sin formato (Word/Docs) automático
+// - Cursor queda donde corresponde al pegar
+// - Sin lógica de bullets (ya estaban en íconos)
 // ============================================
 
 // ---------- DOM ----------
@@ -13,7 +16,6 @@ const copyBtn = document.getElementById("copyBtn");
 const clearBtn = document.getElementById("clearBtn");
 
 const separatorBtn = document.getElementById("separator");
-
 const iconSelect = document.getElementById("iconSelect");
 const toolbarButtons = document.querySelectorAll("button[data-style]");
 
@@ -39,7 +41,7 @@ const styles = {
   // Mathematical Bold
   bold: (ch) => {
     let m = mapLatin(ch, 0x1D400, 0x1D41A); // A-Z, a-z
-    m = mapDigits(m, 0x1D7CE);            // 0-9
+    m = mapDigits(m, 0x1D7CE);             // 0-9
     return m;
   },
 
@@ -93,6 +95,7 @@ const ICON_GROUPS = {
 
 function populateIcons() {
   if (!iconSelect) return;
+
   iconSelect.innerHTML = `<option value="">Insertar ícono…</option>`;
 
   for (const groupName in ICON_GROUPS) {
@@ -117,17 +120,18 @@ function insertTextAtCursor(text) {
 
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) {
-    // fallback: append
     editor.appendChild(document.createTextNode(text));
     return;
   }
 
   const range = sel.getRangeAt(0);
   range.deleteContents();
-  range.insertNode(document.createTextNode(text));
 
-  // move caret after inserted text
-  range.setStart(range.endContainer, range.endOffset);
+  const tn = document.createTextNode(text);
+  range.insertNode(tn);
+
+  // colocar caret después del texto insertado
+  range.setStartAfter(tn);
   range.collapse(true);
 
   sel.removeAllRanges();
@@ -137,12 +141,10 @@ function insertTextAtCursor(text) {
 function insertPlainTextWithNewlines(text) {
   editor.focus();
 
-  // Normalizar saltos de línea (Windows/Word/Docs)
   const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) {
-    // Si no hay selección, agregamos al final
     editor.textContent += normalized;
     return;
   }
@@ -150,31 +152,33 @@ function insertPlainTextWithNewlines(text) {
   const range = sel.getRangeAt(0);
   range.deleteContents();
 
-  // Insertar líneas con <br> para respetar formato de párrafo visual
   const parts = normalized.split("\n");
+  let lastNode = null;
+
   parts.forEach((part, idx) => {
-    range.insertNode(document.createTextNode(part));
+    const tn = document.createTextNode(part);
+    range.insertNode(tn);
+    lastNode = tn;
+
     if (idx < parts.length - 1) {
-      range.insertNode(document.createElement("br"));
+      const br = document.createElement("br");
+      range.insertNode(br);
+      lastNode = br;
     }
+
+    // mover el range al final de lo insertado (evita invertir el orden)
+    range.setStartAfter(lastNode);
+    range.collapse(true);
   });
 
-  // Mover caret al final de lo insertado
   sel.removeAllRanges();
-  const newRange = document.createRange();
-  newRange.selectNodeContents(editor);
-  newRange.collapse(false);
-  sel.addRange(newRange);
-}
-
-function insertNewlinesAround(text) {
-  // inserta con saltos de línea respetando estilo "texto"
-  insertTextAtCursor(text);
+  sel.addRange(range);
 }
 
 // Wrap selection with <code> for mono
 function wrapSelectionWithTag(tagName) {
   editor.focus();
+
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return;
 
@@ -185,7 +189,7 @@ function wrapSelectionWithTag(tagName) {
   wrapper.appendChild(range.extractContents());
   range.insertNode(wrapper);
 
-  // move caret to end of wrapper
+  // mover caret al final del wrapper
   sel.removeAllRanges();
   const newRange = document.createRange();
   newRange.selectNodeContents(wrapper);
@@ -202,21 +206,22 @@ function htmlToUnicode(html) {
 
   // Normalizaciones:
   // - nbsp -> space
-  // - demasiados \n al final -> trim suave
-  return raw.replace(/\u00A0/g, " ").replace(/\n{3,}/g, "\n\n").trimEnd();
+  // - compactar saltos excesivos
+  return raw
+    .replace(/\u00A0/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trimEnd();
 }
 
 function walkNode(node, style) {
   let out = "";
 
   node.childNodes.forEach(child => {
-    // Text node
     if (child.nodeType === Node.TEXT_NODE) {
       out += applyUnicodeStyle(child.nodeValue, style);
       return;
     }
 
-    // Not element
     if (child.nodeType !== Node.ELEMENT_NODE) return;
 
     const tag = child.tagName.toLowerCase();
@@ -240,7 +245,7 @@ function walkNode(node, style) {
       return;
     }
 
-    // List handling: turn LI into lines with bullet
+    // Lists: export li as bullet lines
     if (tag === "ul" || tag === "ol") {
       out += walkNode(child, next);
       out += "\n";
@@ -295,53 +300,9 @@ toolbarButtons.forEach(btn => {
   });
 });
 
-// ---------- Bullets (apply to selected lines in editor) ----------
-function bulletizeSelection(prefix) {
-  editor.focus();
-
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
-
-  const range = sel.getRangeAt(0);
-  const selectedText = sel.toString();
-
-  // Si no hay selección, aplicamos al "párrafo" actual (linea): fallback simple
-  const textToProcess = selectedText && selectedText.length > 0
-    ? selectedText
-    : "";
-
-  if (!textToProcess) {
-    // Sin selección: insertamos prefix y un espacio (comportamiento útil)
-    insertTextAtCursor(prefix + " ");
-    syncOutput();
-    return;
-  }
-
-  const lines = textToProcess.split("\n").map(line => {
-    const trimmed = line.trim();
-    if (!trimmed) return line;
-    if (/^(•|✅|🔹|🔸|▪️|▫️|-|→|➜)\s+/.test(trimmed)) return line;
-    return `${prefix} ${line}`;
-  }).join("\n");
-
-  // Reemplazar selección por texto con bullets (sin conservar tags dentro de selección)
-  // Nota: esto convierte la selección a texto plano, lo cual es ideal para "post profesional".
-  range.deleteContents();
-  range.insertNode(document.createTextNode(lines));
-
-  // Mover caret al final
-  sel.removeAllRanges();
-  const newRange = document.createRange();
-  newRange.setStart(range.endContainer, range.endOffset);
-  newRange.collapse(true);
-  sel.addRange(newRange);
-
-  syncOutput();
-}
-
 // ---------- Separator ----------
 separatorBtn.addEventListener("click", () => {
-  insertNewlinesAround("\n────────────\n");
+  insertTextAtCursor("\n────────────\n");
   syncOutput();
 });
 
@@ -374,20 +335,23 @@ clearBtn.addEventListener("click", () => {
 // ---------- Live sync ----------
 editor.addEventListener("input", syncOutput);
 
+// ---------- Paste as plain text (auto) ----------
 editor.addEventListener("paste", (e) => {
   e.preventDefault();
 
-  // 1) Tomar texto plano
-  const text =
+  let text =
     (e.clipboardData || window.clipboardData).getData("text/plain") || "";
 
-  // 2) Insertar respetando saltos de línea
-  insertPlainTextWithNewlines(text);
+  // Limpieza típica de Word/Docs
+  text = text
+    .replace(/\u00A0/g, " ")   // nbsp
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[–—]/g, "-");
 
-  // 3) Actualizar output
+  insertPlainTextWithNewlines(text);
   syncOutput();
 });
-
 
 // Init
 syncOutput();
