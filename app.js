@@ -152,27 +152,24 @@ function insertPlainTextWithNewlines(text) {
   const range = sel.getRangeAt(0);
   range.deleteContents();
 
+  // Armamos todo en un fragment en el orden correcto
+  const frag = document.createDocumentFragment();
   const parts = normalized.split("\n");
-  let lastNode = null;
 
   parts.forEach((part, idx) => {
-    const tn = document.createTextNode(part);
-    range.insertNode(tn);
-    lastNode = tn;
-
-    if (idx < parts.length - 1) {
-      const br = document.createElement("br");
-      range.insertNode(br);
-      lastNode = br;
-    }
-
-    // mover el range al final de lo insertado (evita invertir el orden)
-    range.setStartAfter(lastNode);
-    range.collapse(true);
+    frag.appendChild(document.createTextNode(part));
+    if (idx < parts.length - 1) frag.appendChild(document.createElement("br"));
   });
 
+  // Insertar el fragmento (una sola operación, sin invertir orden)
+  range.insertNode(frag);
+
+  // Mover caret al final de lo insertado
   sel.removeAllRanges();
-  sel.addRange(range);
+  const newRange = document.createRange();
+  newRange.selectNodeContents(editor);
+  newRange.collapse(false);
+  sel.addRange(newRange);
 }
 
 // Wrap selection with <code> for mono
