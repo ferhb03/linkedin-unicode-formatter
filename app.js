@@ -95,10 +95,71 @@ function applyStyleToSelection(styleKey) {
 // =========================
 // Sincronización y contador
 // =========================
-function syncOutput() {
-  output.value = input.value;
-  charCount.textContent = String(output.value.length);
+function htmlToUnicode(html) {
+  const container = document.createElement("div");
+  container.innerHTML = html;
+
+  return walkNode(container, { bold: false, italic: false, mono: false })
+    .replace(/\u00A0/g, " "); // nbsp -> space
 }
+
+function walkNode(node, style) {
+  let out = "";
+
+  node.childNodes.forEach(child => {
+    if (child.nodeType === Node.TEXT_NODE) {
+      out += applyUnicodeStyle(child.nodeValue, style);
+      return;
+    }
+
+    if (child.nodeType !== Node.ELEMENT_NODE) return;
+
+    const tag = child.tagName.toLowerCase();
+    const next = { ...style };
+
+    if (tag === "b" || tag === "strong") next.bold = true;
+    if (tag === "i" || tag === "em") next.italic = true;
+    if (tag === "code" || tag === "tt" || tag === "pre") next.mono = true;
+
+    // saltos de línea
+    if (tag === "br") {
+      out += "\n";
+      return;
+    }
+
+    // párrafos/div: agregamos saltos
+    if (tag === "div" || tag === "p") {
+      out += walkNode(child, next);
+      out += "\n";
+      return;
+    }
+
+    out += walkNode(child, next);
+  });
+
+  return out;
+}
+
+function applyUnicodeStyle(text, style) {
+  // Prioridad: mono > bold+italic > bold > italic > normal
+  let mapper = null;
+
+  if (style.mono) mapper = styles.mono;
+  else if (style.bold && style.italic) mapper = styles.boldItalic;
+  else if (style.bold) mapper = styles.bold;
+  else if (style.italic) mapper = styles.italic;
+
+  if (!mapper) return text;
+
+  return Array.from(text).map(mapper).join("");
+
+  styles.boldItalic = (ch) => {
+  // Mathematical Bold Italic A-Z: U+1D468, a-z: U+1D482
+  return mapLatin(ch, 0x1D468, 0x1D482);
+};
+  
+}
+
 
 // =========================
 // Funcion helper para "mono"
@@ -290,7 +351,7 @@ clearBtn.addEventListener("click", () => {
 });
 
 // Sync en vivo
-input.addEventListener("input", syncOutput);
+editor.addEventListener("input", syncOutput);
 
 // Init
 syncOutput();
