@@ -1,10 +1,10 @@
 // ============================================
-// LinkedIn Unicode Formatter - app.js (FULL, CLEAN)
-// Editor (izq): texto normal con formato visual
-// Output (der): Unicode listo para copiar/pegar
-// - Pegar sin formato (Word/Docs) automático
-// - Cursor queda donde corresponde al pegar
-// - Sin lógica de bullets (ya estaban en íconos)
+// LinkedIn Unicode Formatter - app.js (FULL, STABLE)
+// Editor (izq): texto normal (visual)
+// Output (der): Unicode para copiar/pegar
+// - Pegar SIN formato (Word/Docs) garantizado
+// - Botón Tx: quita formato (selección o todo)
+// - B / I / S / M: formato visual -> conversión Unicode en Output
 // ============================================
 
 // ---------- DOM ----------
@@ -12,14 +12,19 @@ const editor = document.getElementById("editor");     // contenteditable div
 const output = document.getElementById("output");     // readonly textarea
 const charCount = document.getElementById("charCount");
 
-const clearFormatBtn = document.getElementById("clearFormat");
-
 const copyBtn = document.getElementById("copyBtn");
 const clearBtn = document.getElementById("clearBtn");
 
 const separatorBtn = document.getElementById("separator");
 const iconSelect = document.getElementById("iconSelect");
-const toolbarButtons = document.querySelectorAll("button[data-style]");
+
+const clearFormatBtn = document.getElementById("clearFormat");
+const toolbarButtons = document.querySelectorAll('button[data-style]');
+
+// Guard rails (si falta algo en HTML, evitamos romper todo)
+if (!editor || !output || !charCount) {
+  console.error("Faltan elementos esenciales (editor/output/charCount). Revisá ids en index.html");
+}
 
 // ---------- Unicode mapping helpers ----------
 function codePoint(ch) {
@@ -53,7 +58,7 @@ const styles = {
   // Mathematical Bold Italic (solo letras)
   boldItalic: (ch) => mapLatin(ch, 0x1D468, 0x1D482),
 
-  // Mathematical Script (solo letras)
+  // Mathematical Script (solo letras; con mapa para evitar huecos)
   script: (ch) => {
     const upper = {
       A:"𝒜",B:"ℬ",C:"𝒞",D:"𝒟",E:"ℰ",F:"ℱ",G:"𝒢",H:"ℋ",I:"ℐ",J:"𝒥",K:"𝒦",L:"ℒ",M:"ℳ",
@@ -74,64 +79,56 @@ const styles = {
   }
 };
 
-
 // ---------- Icon library (optgroups) ----------
 const ICON_GROUPS = {
   "Checks & Crosses": [
-    "✅", "☑️", "✔️", "🟩", "🟩✔️", "🟩✅",
-    "❌", "✖️", "❎", "🟥", "🟥❌", "🟥✖️",
-    "🟢", "🔴", "🟡"
+    "✅","☑️","✔️","🟩","🟩✔️","🟩✅",
+    "❌","✖️","❎","🟥","🟥❌","🟥✖️",
+    "🟢","🔴","🟡"
   ],
   "Prioridad / Atención": [
-    "⚠️", "🚨", "🔥", "⚡", "❗", "❓", "‼️", "⁉️", "🛑",
-    "🔺", "🔻"
+    "⚠️","🚨","🔥","⚡","❗","❓","‼️","⁉️","🛑","🔺","🔻"
   ],
   "Acción / Trabajo": [
-    "🛠️", "🔧", "⚙️", "📌", "🎯", "🚀", "📍", "🔁", "🔄",
-    "➡️", "↗️", "↘️"
+    "🛠️","🔧","⚙️","📌","🎯","🚀","📍","🔁","🔄","➡️","↗️","↘️"
   ],
   "Ideas / Pensar": [
-    "💡", "🧠", "📐", "📏", "🧩", "🔍", "🧪", "🧭"
+    "💡","🧠","📐","📏","🧩","🔍","🧪","🧭"
   ],
   "Documentos / Datos": [
-    "📝", "📄", "📚", "📑", "🧾", "📋",
-    "📊", "📈", "📉", "🔎"
+    "📝","📄","📚","📑","🧾","📋","📊","📈","📉","🔎"
   ],
   "Comunicación / Personas": [
-    "👥", "🤝", "🙋", "💬", "📣", "📞", "✉️", "🔔", "🗣️"
+    "👥","🤝","🙋","💬","📣","📞","✉️","🔔","🗣️"
   ],
   "Tiempo / Proceso": [
-    "⏱️", "⌛", "🕒", "🗓️", "🔂", "🔁", "➡️"
+    "⏱️","⌛","🕒","🗓️","🔂","🔁","➡️"
   ],
   "Bullets & Separadores": [
-    "•", "◦", "▪️", "▫️", "🔹", "🔸", "➜", "→",
-    "—", "–", "│", "┃", "⋯"
+    "•","◦","▪️","▫️","🔹","🔸","➜","→","—","–","│","┃","⋯"
   ]
 };
 
 function populateIcons() {
   if (!iconSelect) return;
-
   iconSelect.innerHTML = `<option value="">Insertar ícono…</option>`;
-
   for (const groupName in ICON_GROUPS) {
-    const optgroup = document.createElement("optgroup");
-    optgroup.label = groupName;
-
+    const og = document.createElement("optgroup");
+    og.label = groupName;
     ICON_GROUPS[groupName].forEach(icon => {
       const opt = document.createElement("option");
       opt.value = icon;
       opt.textContent = icon;
-      optgroup.appendChild(opt);
+      og.appendChild(opt);
     });
-
-    iconSelect.appendChild(optgroup);
+    iconSelect.appendChild(og);
   }
 }
 populateIcons();
 
 // ---------- Contenteditable insertion helpers ----------
 function insertTextAtCursor(text) {
+  if (!editor) return;
   editor.focus();
 
   const sel = window.getSelection();
@@ -146,18 +143,18 @@ function insertTextAtCursor(text) {
   const tn = document.createTextNode(text);
   range.insertNode(tn);
 
-  // colocar caret después del texto insertado
+  // caret después
   range.setStartAfter(tn);
   range.collapse(true);
-
   sel.removeAllRanges();
   sel.addRange(range);
 }
 
 function insertPlainTextWithNewlines(text) {
+  if (!editor) return;
   editor.focus();
 
-  const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const normalized = (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) {
@@ -168,7 +165,6 @@ function insertPlainTextWithNewlines(text) {
   const range = sel.getRangeAt(0);
   range.deleteContents();
 
-  // Armamos todo en un fragment en el orden correcto
   const frag = document.createDocumentFragment();
   const parts = normalized.split("\n");
 
@@ -177,10 +173,9 @@ function insertPlainTextWithNewlines(text) {
     if (idx < parts.length - 1) frag.appendChild(document.createElement("br"));
   });
 
-  // Insertar el fragmento (una sola operación, sin invertir orden)
   range.insertNode(frag);
 
-  // Mover caret al final de lo insertado
+  // caret al final del editor (simple y estable)
   sel.removeAllRanges();
   const newRange = document.createRange();
   newRange.selectNodeContents(editor);
@@ -188,8 +183,8 @@ function insertPlainTextWithNewlines(text) {
   sel.addRange(newRange);
 }
 
-// Wrap selection with <code> for mono
 function wrapSelectionWithTag(tagName) {
+  if (!editor) return;
   editor.focus();
 
   const sel = window.getSelection();
@@ -202,7 +197,6 @@ function wrapSelectionWithTag(tagName) {
   wrapper.appendChild(range.extractContents());
   range.insertNode(wrapper);
 
-  // mover caret al final del wrapper
   sel.removeAllRanges();
   const newRange = document.createRange();
   newRange.selectNodeContents(wrapper);
@@ -211,7 +205,9 @@ function wrapSelectionWithTag(tagName) {
 }
 
 function wrapSelectionWithSpanAttr(attrName, attrValue) {
+  if (!editor) return;
   editor.focus();
+
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return;
 
@@ -237,15 +233,10 @@ function htmlToUnicode(html) {
 
   const raw = walkNode(container, { bold: false, italic: false, mono: false, script: false });
 
-  // Normalizaciones:
-  // - nbsp -> space
-  // - compactar saltos excesivos
   return raw
-  .replace(/\u00A0/g, " ")
-  // Permite más Enter seguidos (máximo 4 saltos = hasta 2 líneas en blanco)
-  .replace(/\n{5,}/g, "\n\n\n\n")
-  .trimEnd();
-
+    .replace(/\u00A0/g, " ")
+    .replace(/\n{5,}/g, "\n\n\n\n")
+    .trimEnd();
 }
 
 function walkNode(node, style) {
@@ -256,32 +247,24 @@ function walkNode(node, style) {
       out += applyUnicodeStyle(child.nodeValue, style);
       return;
     }
-
     if (child.nodeType !== Node.ELEMENT_NODE) return;
 
     const tag = child.tagName.toLowerCase();
     const next = { ...style };
 
-    // Style tags
     if (tag === "b" || tag === "strong") next.bold = true;
     if (tag === "i" || tag === "em") next.italic = true;
     if (tag === "code" || tag === "tt" || tag === "pre") next.mono = true;
     if (tag === "span" && child.getAttribute("data-script") === "1") next.script = true;
 
-    // Line breaks
-    if (tag === "br") {
+    if (tag === "br") { out += "\n"; return; }
+
+    if (tag === "div" || tag === "p") {
+      out += walkNode(child, next);
       out += "\n";
       return;
     }
 
-  // Block elements: always end with newline (handles empty paragraphs too)
-  if (tag === "div" || tag === "p") {
-  out += walkNode(child, next);
-  out += "\n";
-  return;
-}
-
-    // Lists: export li as bullet lines
     if (tag === "ul" || tag === "ol") {
       out += walkNode(child, next);
       out += "\n";
@@ -294,7 +277,6 @@ function walkNode(node, style) {
       return;
     }
 
-    // Default: inline container
     out += walkNode(child, next);
   });
 
@@ -302,7 +284,6 @@ function walkNode(node, style) {
 }
 
 function applyUnicodeStyle(text, style) {
-  // Prioridad: mono > bold+italic > bold > italic > normal
   let mapper = null;
 
   if (style.mono) mapper = styles.mono;
@@ -312,27 +293,27 @@ function applyUnicodeStyle(text, style) {
   else if (style.italic) mapper = styles.italic;
 
   if (!mapper) return text;
-
   return Array.from(text).map(mapper).join("");
 }
 
 // ---------- Sync Output ----------
 function syncOutput() {
+  if (!editor || !output || !charCount) return;
   const unicodeText = htmlToUnicode(editor.innerHTML);
   output.value = unicodeText;
   charCount.textContent = String(unicodeText.length);
 }
 
-
-// ---------- Clear Format ----------
+// ---------- Clear Format (Tx) ----------
 function stripAllFormatting() {
-  // Convierte todo el editor a texto plano, preservando saltos visuales
-  const plain = editor.innerText;      // innerText respeta saltos
-  editor.textContent = plain;          // textContent evita HTML
+  if (!editor) return;
+  const plain = editor.innerText;   // respeta saltos
+  editor.textContent = plain;       // elimina HTML
   syncOutput();
 }
 
 function stripSelectionFormatting() {
+  if (!editor) return;
   editor.focus();
 
   const sel = window.getSelection();
@@ -340,37 +321,28 @@ function stripSelectionFormatting() {
 
   const range = sel.getRangeAt(0);
   if (range.collapsed) {
-    // sin selección -> todo
     stripAllFormatting();
     return;
   }
 
-  // Obtener texto plano de la selección
   const selectedPlain = sel.toString();
-
-  // Reemplazar selección por texto plano (sin tags)
   range.deleteContents();
-
-  // Insertar respetando saltos dentro de la selección
   insertPlainTextWithNewlines(selectedPlain);
-
   syncOutput();
 }
 
 if (clearFormatBtn) {
   clearFormatBtn.addEventListener("click", () => {
     const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) {
-      stripSelectionFormatting();
-    } else {
-      stripAllFormatting();
-    }
+    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) stripSelectionFormatting();
+    else stripAllFormatting();
   });
 }
 
-// ---------- Buttons: B / I / M (visual formatting only) ----------
+// ---------- Toolbar buttons (B / I / S / M) ----------
 toolbarButtons.forEach(btn => {
   btn.addEventListener("click", () => {
+    if (!editor) return;
     const styleKey = btn.getAttribute("data-style");
     editor.focus();
 
@@ -384,57 +356,65 @@ toolbarButtons.forEach(btn => {
 });
 
 // ---------- Separator ----------
-separatorBtn.addEventListener("click", () => {
-  insertTextAtCursor("\n────────────\n");
-  syncOutput();
-});
+if (separatorBtn) {
+  separatorBtn.addEventListener("click", () => {
+    insertTextAtCursor("\n────────────\n");
+    syncOutput();
+  });
+}
 
 // ---------- Icons insert ----------
-iconSelect.addEventListener("change", () => {
-  const v = iconSelect.value;
-  if (v) insertTextAtCursor(v + " ");
-  iconSelect.value = "";
-  syncOutput();
-});
+if (iconSelect) {
+  iconSelect.addEventListener("change", () => {
+    const v = iconSelect.value;
+    if (v) insertTextAtCursor(v + " ");
+    iconSelect.value = "";
+    syncOutput();
+  });
+}
 
 // ---------- Copy ----------
-copyBtn.addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(output.value);
-    const old = copyBtn.textContent;
-    copyBtn.textContent = "Copiado";
-    setTimeout(() => (copyBtn.textContent = old), 900);
-  } catch {
-    alert("No se pudo copiar. Probá manualmente (Ctrl+C).");
-  }
-});
+if (copyBtn) {
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(output.value);
+      const old = copyBtn.textContent;
+      copyBtn.textContent = "Copiado";
+      setTimeout(() => (copyBtn.textContent = old), 900);
+    } catch {
+      alert("No se pudo copiar. Probá manualmente (Ctrl+C).");
+    }
+  });
+}
 
 // ---------- Clear ----------
-clearBtn.addEventListener("click", () => {
-  editor.innerHTML = "";
-  syncOutput();
-});
+if (clearBtn) {
+  clearBtn.addEventListener("click", () => {
+    if (!editor) return;
+    editor.innerHTML = "";
+    syncOutput();
+  });
+}
 
 // ---------- Live sync ----------
-editor.addEventListener("input", syncOutput);
+if (editor) {
+  editor.addEventListener("input", syncOutput);
 
-// ---------- Paste as plain text (auto) ----------
-editor.addEventListener("paste", (e) => {
-  e.preventDefault();
+  // Paste as plain text (auto)
+  editor.addEventListener("paste", (e) => {
+    e.preventDefault();
 
-  let text =
-    (e.clipboardData || window.clipboardData).getData("text/plain") || "";
+    let text = (e.clipboardData || window.clipboardData).getData("text/plain") || "";
+    text = text
+      .replace(/\u00A0/g, " ")
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .replace(/[–—]/g, "-");
 
-  // Limpieza típica de Word/Docs
-  text = text
-    .replace(/\u00A0/g, " ")   // nbsp
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
-    .replace(/[–—]/g, "-");
-
-  insertPlainTextWithNewlines(text);
-  syncOutput();
-});
+    insertPlainTextWithNewlines(text);
+    syncOutput();
+  });
+}
 
 // Init
 syncOutput();
