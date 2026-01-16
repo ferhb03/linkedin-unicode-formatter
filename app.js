@@ -1,7 +1,7 @@
 // =========================
 // Elementos UI
 // =========================
-const input = document.getElementById("input");
+const editor = document.getElementById("editor");
 const output = document.getElementById("output");
 const charCount = document.getElementById("charCount");
 
