@@ -235,10 +235,10 @@ function walkNode(node, style) {
       return;
     }
 
-  // Block elements: force newline separation
+  // Block elements: always end with newline (handles empty paragraphs too)
   if (tag === "div" || tag === "p") {
-  const content = walkNode(child, next).trim();
-  if (content) out += content + "\n\n";
+  out += walkNode(child, next);
+  out += "\n";
   return;
 }
 
