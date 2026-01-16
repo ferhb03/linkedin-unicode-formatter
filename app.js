@@ -12,8 +12,6 @@ const charCount = document.getElementById("charCount");
 const copyBtn = document.getElementById("copyBtn");
 const clearBtn = document.getElementById("clearBtn");
 
-const bulletDot = document.getElementById("bulletDot");
-const bulletCheck = document.getElementById("bulletCheck");
 const separatorBtn = document.getElementById("separator");
 
 const iconSelect = document.getElementById("iconSelect");
