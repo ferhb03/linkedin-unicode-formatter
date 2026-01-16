@@ -77,7 +77,7 @@ script: (ch) => {
     let m = mapLatin(ch, 0x1D670, 0x1D68A);
     m = mapDigits(m, 0x1D7F6);
     return m;
-  }
+  };
 };
 
 // ---------- Icon library (optgroups) ----------
