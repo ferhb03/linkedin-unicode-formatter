@@ -1,3 +1,6 @@
+// =========================
+// Elementos UI
+// =========================
 const input = document.getElementById("input");
 const output = document.getElementById("output");
 const charCount = document.getElementById("charCount");
@@ -12,64 +15,9 @@ const iconSelect = document.getElementById("iconSelect");
 
 const toolbarButtons = document.querySelectorAll("button[data-style]");
 
-// --- Unicode maps (MVP): A-Z a-z 0-9 para bold/italic/mono
-// Nota: Italic no cubre bien todo en algunos alfabetos; lo dejamos simple.
-
-const ICON_GROUPS = {
-  "Checks & Crosses": [
-    "✅","✔️","☑️","🟩","❌","✖️","❎","🟥",
-    "🟢","🔴","🟡"
-  ],
-
-  "Prioridad / Atención": [
-    "⚠️","🚨","🔥","⚡","❗","❓","‼️","⁉️"
-  ],
-
-  "Acción / Trabajo": [
-    "🛠️","🔧","⚙️","📌","🎯","🚀","📍","🔁"
-  ],
-
-  "Ideas / Pensar": [
-    "💡","🧠","📐","📏","🧩","🔍"
-  ],
-
-  "Documentos / Datos": [
-    "📝","📄","📚","📊","📈","📉","🧾","📑"
-  ],
-
-  "Comunicación / Personas": [
-    "👥","🤝","💬","📣","📞","✉️","🔔"
-  ],
-
-  "Tiempo / Proceso": [
-    "⏱️","⌛","🕒","🗓️","🔄","➡️","⬅️","⬆️","⬇️"
-  ],
-
-  "Bullets & Separadores": [
-    "•","◦","▪️","▫️","🔹","🔸","➜","→","—","–"
-  ]
-};
-
-function populateIcons() {
-  iconSelect.innerHTML = `<option value="">Insertar ícono…</option>`;
-
-  for (const groupName in ICON_GROUPS) {
-    const optgroup = document.createElement("optgroup");
-    optgroup.label = groupName;
-
-    ICON_GROUPS[groupName].forEach(icon => {
-      const opt = document.createElement("option");
-      opt.value = icon;
-      opt.textContent = icon;
-      optgroup.appendChild(opt);
-    });
-
-    iconSelect.appendChild(optgroup);
-  }
-}
-
-populateIcons();
-
+// =========================
+// Helpers Unicode (Bold/Italic/Mono)
+// =========================
 function codePoint(ch) {
   return ch.codePointAt(0);
 }
@@ -85,10 +33,14 @@ function mapLatin(ch, baseUpper, baseLower) {
 
 function mapDigits(ch, baseDigit) {
   const cp = codePoint(ch);
+  // 0-9
   if (cp >= 48 && cp <= 57) return String.fromCodePoint(baseDigit + (cp - 48));
   return ch;
 }
 
+// Nota:
+// - Italic no cubre dígitos bien en Unicode "mathematical italic" -> dejamos solo letras.
+// - Bold y Mono sí cubren 0-9 en los rangos estándar.
 const styles = {
   // Mathematical Bold
   bold: (ch) => {
@@ -97,11 +49,13 @@ const styles = {
     m = mapDigits(m, 0x1D7CE);
     return m;
   },
+
   // Mathematical Italic
   italic: (ch) => {
-    // Italic A-Z: U+1D434, a-z: U+1D44E (ojo: algunos faltantes/variantes)
+    // Italic A-Z: U+1D434, a-z: U+1D44E
     return mapLatin(ch, 0x1D434, 0x1D44E);
   },
+
   // Mathematical Monospace
   mono: (ch) => {
     // Mono A-Z: U+1D670, a-z: U+1D68A, 0-9: U+1D7F6
@@ -111,6 +65,9 @@ const styles = {
   }
 };
 
+// =========================
+// Aplicar estilo a selección
+// =========================
 function applyStyleToSelection(styleKey) {
   const styleFn = styles[styleKey];
   if (!styleFn) return;
@@ -135,11 +92,17 @@ function applyStyleToSelection(styleKey) {
   syncOutput();
 }
 
+// =========================
+// Sincronización y contador
+// =========================
 function syncOutput() {
   output.value = input.value;
   charCount.textContent = String(output.value.length);
 }
 
+// =========================
+// Bullets por líneas (en selección o texto entero)
+// =========================
 function bulletize(prefix) {
   const start = input.selectionStart;
   const end = input.selectionEnd;
@@ -151,7 +114,7 @@ function bulletize(prefix) {
     const trimmed = l.trim();
     if (!trimmed) return l; // mantener líneas vacías
     // Evitar doble bullet si ya tiene uno simple
-    if (/^(•|✅|🔹|▪️|-|→)\s+/.test(trimmed)) return l;
+    if (/^(•|✅|🔹|🔸|▪️|▫️|-|→|➜)\s+/.test(trimmed)) return l;
     return `${prefix} ${l}`;
   }).join("\n");
 
@@ -167,6 +130,9 @@ function bulletize(prefix) {
   syncOutput();
 }
 
+// =========================
+// Inserción en cursor
+// =========================
 function insertAtCursor(str) {
   const start = input.selectionStart;
   const end = input.selectionEnd;
@@ -179,7 +145,78 @@ function insertAtCursor(str) {
   syncOutput();
 }
 
-// Toolbar style buttons
+// =========================
+// Librería de íconos por grupos (optgroup)
+// =========================
+const ICON_GROUPS = {
+  "Checks & Crosses": [
+    // "cuadrado verde con tilde" y "cuadrado rojo con cruz" (mejor aproximación Unicode)
+    "✅", "☑️", "✔️", "🟩", "🟩✔️", "🟩✅",
+    "❌", "✖️", "❎", "🟥", "🟥❌", "🟥✖️",
+    "🟢", "🔴", "🟡"
+  ],
+
+  "Prioridad / Atención": [
+    "⚠️", "🚨", "🔥", "⚡", "❗", "❓", "‼️", "⁉️",
+    "🔺", "🔻", "🛑"
+  ],
+
+  "Acción / Trabajo": [
+    "🛠️", "🔧", "⚙️", "📌", "🎯", "🚀", "📍", "🔁",
+    "➡️", "↗️", "↘️", "🔄"
+  ],
+
+  "Ideas / Pensar": [
+    "💡", "🧠", "📐", "📏", "🧩", "🔍", "🧪", "🧭"
+  ],
+
+  "Documentos / Datos": [
+    "📝", "📄", "📚", "📑", "🧾",
+    "📊", "📈", "📉",
+    "🔎", "📋"
+  ],
+
+  "Comunicación / Personas": [
+    "👥", "🤝", "🙋", "💬", "📣", "📞", "✉️", "🔔",
+    "🗣️"
+  ],
+
+  "Tiempo / Proceso": [
+    "⏱️", "⌛", "🕒", "🗓️",
+    "🔂", "🔁", "✅", "➡️"
+  ],
+
+  "Bullets & Separadores": [
+    "•", "◦", "▪️", "▫️", "🔹", "🔸",
+    "➜", "→", "—", "–", "│", "┃", "⋯"
+  ]
+};
+
+function populateIcons() {
+  iconSelect.innerHTML = `<option value="">Insertar ícono…</option>`;
+
+  for (const groupName in ICON_GROUPS) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = groupName;
+
+    ICON_GROUPS[groupName].forEach(icon => {
+      const opt = document.createElement("option");
+      opt.value = icon;
+      opt.textContent = icon;
+      optgroup.appendChild(opt);
+    });
+
+    iconSelect.appendChild(optgroup);
+  }
+}
+
+populateIcons();
+
+// =========================
+// Eventos
+// =========================
+
+// Botones de estilo
 toolbarButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     const styleKey = btn.getAttribute("data-style");
@@ -191,17 +228,17 @@ toolbarButtons.forEach(btn => {
 bulletDot.addEventListener("click", () => bulletize("•"));
 bulletCheck.addEventListener("click", () => bulletize("✅"));
 
-// Separator
+// Separador
 separatorBtn.addEventListener("click", () => insertAtCursor("\n────────────\n"));
 
-// Icons
+// Íconos (insertar al cursor)
 iconSelect.addEventListener("change", () => {
   const v = iconSelect.value;
   if (v) insertAtCursor(v + " ");
   iconSelect.value = "";
 });
 
-// Copy
+// Copiar
 copyBtn.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(output.value);
@@ -212,12 +249,14 @@ copyBtn.addEventListener("click", async () => {
   }
 });
 
-// Clear
+// Limpiar
 clearBtn.addEventListener("click", () => {
   input.value = "";
   syncOutput();
 });
 
-// Live sync
+// Sync en vivo
 input.addEventListener("input", syncOutput);
+
+// Init
 syncOutput();
