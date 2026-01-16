@@ -8,6 +8,26 @@
   --btn2: #233a5f;
 }
 
+.editor{
+  width: 100%;
+  min-height: 320px;
+  resize: vertical;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0e1520;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.editor:empty:before{
+  content: attr(data-placeholder);
+  color: var(--muted);
+}
+
 * { box-sizing: border-box; }
 body {
   margin: 0;
