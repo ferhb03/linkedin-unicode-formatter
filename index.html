@@ -16,23 +16,19 @@
     <section class="panel">
       <h2>Editor</h2>
 
-      <div class="toolbar">
-        <button data-style="bold" type="button" title="Negrita Unicode">𝗕</button>
-        <button data-style="italic" type="button" title="Itálica Unicode">𝘐</button>
-        <button data-style="mono" type="button" title="Monoespaciado Unicode">𝙼</button>
+<div class="toolbar">
+  <button data-style="bold" type="button" title="Negrita Unicode">B</button>
+  <button data-style="italic" type="button" title="Itálica Unicode">I</button>
+  <button data-style="mono" type="button" title="Monoespaciado Unicode">M</button>
 
-        <span class="sep"></span>
+  <span class="sep"></span>
 
-        <select id="iconSelect" aria-label="Insertar ícono">
-          <option value="">Insertar ícono…</option>
-        </select>
-        <button id="separator" type="button" title="Insertar separador">Insertar separador</button>
+  <select id="iconSelect" aria-label="Insertar ícono">
+    <option value="">Insertar ícono…</option>
+  </select>
 
-        <span class="sep"></span>
-
-        <!-- Select mínimo: se llena por JS con optgroups -->
-
-      </div>
+  <button id="separator" type="button" title="Insertar separador">Insertar separador</button>
+</div>
 
     <div id="editor" class="editor" contenteditable="true" spellcheck="true" data-placeholder="Escribí tu post acá…"></div>
 
