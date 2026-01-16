@@ -12,6 +12,8 @@ const editor = document.getElementById("editor");     // contenteditable div
 const output = document.getElementById("output");     // readonly textarea
 const charCount = document.getElementById("charCount");
 
+const clearFormatBtn = document.getElementById("clearFormat");
+
 const copyBtn = document.getElementById("copyBtn");
 const clearBtn = document.getElementById("clearBtn");
 
@@ -283,6 +285,51 @@ function syncOutput() {
   const unicodeText = htmlToUnicode(editor.innerHTML);
   output.value = unicodeText;
   charCount.textContent = String(unicodeText.length);
+}
+
+
+// ---------- Clear Format ----------
+function stripAllFormatting() {
+  // Convierte todo el editor a texto plano, preservando saltos visuales
+  const plain = editor.innerText;      // innerText respeta saltos
+  editor.textContent = plain;          // textContent evita HTML
+  syncOutput();
+}
+
+function stripSelectionFormatting() {
+  editor.focus();
+
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+
+  const range = sel.getRangeAt(0);
+  if (range.collapsed) {
+    // sin selección -> todo
+    stripAllFormatting();
+    return;
+  }
+
+  // Obtener texto plano de la selección
+  const selectedPlain = sel.toString();
+
+  // Reemplazar selección por texto plano (sin tags)
+  range.deleteContents();
+
+  // Insertar respetando saltos dentro de la selección
+  insertPlainTextWithNewlines(selectedPlain);
+
+  syncOutput();
+}
+
+if (clearFormatBtn) {
+  clearFormatBtn.addEventListener("click", () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) {
+      stripSelectionFormatting();
+    } else {
+      stripAllFormatting();
+    }
+  });
 }
 
 // ---------- Buttons: B / I / M (visual formatting only) ----------
