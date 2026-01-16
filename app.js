@@ -101,6 +101,28 @@ function syncOutput() {
 }
 
 // =========================
+// Funcion helper para "mono"
+// =========================
+function wrapSelectionWithTag(tagName) {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+
+  const range = sel.getRangeAt(0);
+  if (range.collapsed) return;
+
+  const wrapper = document.createElement(tagName);
+  wrapper.appendChild(range.extractContents());
+  range.insertNode(wrapper);
+
+  // mover cursor al final del wrapper
+  sel.removeAllRanges();
+  const newRange = document.createRange();
+  newRange.selectNodeContents(wrapper);
+  newRange.collapse(false);
+  sel.addRange(newRange);
+}
+
+// =========================
 // Bullets por líneas (en selección o texto entero)
 // =========================
 function bulletize(prefix) {
@@ -220,9 +242,21 @@ populateIcons();
 toolbarButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     const styleKey = btn.getAttribute("data-style");
-    applyStyleToSelection(styleKey);
+
+    editor.focus();
+
+    if (styleKey === "bold") document.execCommand("bold");
+    if (styleKey === "italic") document.execCommand("italic");
+
+    if (styleKey === "mono") {
+      // mono: envolvemos con <code>
+      wrapSelectionWithTag("code");
+    }
+
+    syncOutput();
   });
 });
+
 
 // Bullets
 bulletDot.addEventListener("click", () => bulletize("•"));
