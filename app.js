@@ -205,9 +205,11 @@ function htmlToUnicode(html) {
   // - nbsp -> space
   // - compactar saltos excesivos
   return raw
-    .replace(/\u00A0/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .trimEnd();
+  .replace(/\u00A0/g, " ")
+  // Permite más Enter seguidos (máximo 4 saltos = hasta 2 líneas en blanco)
+  .replace(/\n{5,}/g, "\n\n\n\n")
+  .trimEnd();
+
 }
 
 function walkNode(node, style) {
