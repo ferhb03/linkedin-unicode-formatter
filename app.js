@@ -308,9 +308,6 @@ function bulletizeSelection(prefix) {
   syncOutput();
 }
 
-bulletDot.addEventListener("click", () => bulletizeSelection("•"));
-bulletCheck.addEventListener("click", () => bulletizeSelection("✅"));
-
 // ---------- Separator ----------
 separatorBtn.addEventListener("click", () => {
   insertNewlinesAround("\n────────────\n");
