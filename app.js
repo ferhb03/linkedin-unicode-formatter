@@ -42,8 +42,8 @@ function mapDigits(ch, baseDigit) {
 const styles = {
   // Mathematical Bold
   bold: (ch) => {
-    let m = mapLatin(ch, 0x1D400, 0x1D41A); // A-Z, a-z
-    m = mapDigits(m, 0x1D7CE);             // 0-9
+    let m = mapLatin(ch, 0x1D400, 0x1D41A);
+    m = mapDigits(m, 0x1D7CE);
     return m;
   },
 
@@ -53,32 +53,27 @@ const styles = {
   // Mathematical Bold Italic (solo letras)
   boldItalic: (ch) => mapLatin(ch, 0x1D468, 0x1D482),
 
-  // Mathematical Script (solo letras; no hay dígitos)
-script: (ch) => {
-  // Upper: U+1D49C, Lower: U+1D4B6
-  // Nota: este bloque tiene "huecos" (caracteres inexistentes) en Unicode.
-  // Para evitar roturas, usamos un mapa explícito para A-Z y a-z.
-  const upper = {
-    A:"𝒜",B:"ℬ",C:"𝒞",D:"𝒟",E:"ℰ",F:"ℱ",G:"𝒢",H:"ℋ",I:"ℐ",J:"𝒥",K:"𝒦",L:"ℒ",M:"ℳ",
-    N:"𝒩",O:"𝒪",P:"𝒫",Q:"𝒬",R:"ℛ",S:"𝒮",T:"𝒯",U:"𝒰",V:"𝒱",W:"𝒲",X:"𝒳",Y:"𝒴",Z:"𝒵"
-  };
-  const lower = {
-    a:"𝒶",b:"𝒷",c:"𝒸",d:"𝒹",e:"𝑒",f:"𝒻",g:"𝑔",h:"𝒽",i:"𝒾",j:"𝒿",k:"𝓀",l:"𝓁",m:"𝓂",
-    n:"𝓃",o:"𝑜",p:"𝓅",q:"𝓆",r:"𝓇",s:"𝓈",t:"𝓉",u:"𝓊",v:"𝓋",w:"𝓌",x:"𝓍",y:"𝓎",z:"𝓏"
-  };
-
-  if (upper[ch]) return upper[ch];
-  if (lower[ch]) return lower[ch];
-  return ch;
-}
+  // Mathematical Script (solo letras)
+  script: (ch) => {
+    const upper = {
+      A:"𝒜",B:"ℬ",C:"𝒞",D:"𝒟",E:"ℰ",F:"ℱ",G:"𝒢",H:"ℋ",I:"ℐ",J:"𝒥",K:"𝒦",L:"ℒ",M:"ℳ",
+      N:"𝒩",O:"𝒪",P:"𝒫",Q:"𝒬",R:"ℛ",S:"𝒮",T:"𝒯",U:"𝒰",V:"𝒱",W:"𝒲",X:"𝒳",Y:"𝒴",Z:"𝒵"
+    };
+    const lower = {
+      a:"𝒶",b:"𝒷",c:"𝒸",d:"𝒹",e:"𝑒",f:"𝒻",g:"𝑔",h:"𝒽",i:"𝒾",j:"𝒿",k:"𝓀",l:"𝓁",m:"𝓂",
+      n:"𝓃",o:"𝑜",p:"𝓅",q:"𝓆",r:"𝓇",s:"𝓈",t:"𝓉",u:"𝓊",v:"𝓋",w:"𝓌",x:"𝓍",y:"𝓎",z:"𝓏"
+    };
+    return upper[ch] || lower[ch] || ch;
+  },
 
   // Mathematical Monospace
   mono: (ch) => {
     let m = mapLatin(ch, 0x1D670, 0x1D68A);
     m = mapDigits(m, 0x1D7F6);
     return m;
-  };
+  }
 };
+
 
 // ---------- Icon library (optgroups) ----------
 const ICON_GROUPS = {
@@ -240,7 +235,7 @@ function htmlToUnicode(html) {
   const container = document.createElement("div");
   container.innerHTML = html;
 
-  const raw = walkNode(container, { bold: false, italic: false, mono: false });
+  const raw = walkNode(container, { bold: false, italic: false, mono: false, script: false });
 
   // Normalizaciones:
   // - nbsp -> space
