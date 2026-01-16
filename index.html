@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LinkedIn Unicode Formatter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="wrap">
+    <h1>LinkedIn Unicode Formatter</h1>
+    <p class="muted">Formateá texto para LinkedIn usando Unicode (sin rich text real).</p>
+  </header>
+
+  <main class="wrap grid">
+    <section class="panel">
+      <h2>Editor</h2>
+
+      <div class="toolbar">
+        <button data-style="bold" type="button">𝗕</button>
+        <button data-style="italic" type="button">𝘐</button>
+        <button data-style="mono" type="button">𝙼</button>
+
+        <span class="sep"></span>
+
+        <button id="bulletDot" type="button">• Bullets</button>
+        <button id="bulletCheck" type="button">✅ Bullets</button>
+        <button id="separator" type="button">Insertar separador</button>
+
+        <span class="sep"></span>
+
+        <select id="iconSelect" aria-label="Insertar ícono">
+          <option value="">Insertar ícono…</option>
+          <option>✅</option><option>📌</option><option>🎯</option><option>⚡</option><option>🔥</option>
+          <option>📈</option><option>🧠</option><option>🛠️</option><option>📍</option><option>💡</option>
+        </select>
+      </div>
+
+      <textarea id="input" placeholder="Escribí tu post acá…"></textarea>
+
+      <div class="meta">
+        <div>Caracteres: <strong id="charCount">0</strong></div>
+        <div class="actions">
+          <button id="copyBtn" type="button">Copiar resultado</button>
+          <button id="clearBtn" type="button" class="ghost">Limpiar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Resultado (copiar y pegar)</h2>
+      <textarea id="output" readonly placeholder="Acá aparece el texto ya formateado…"></textarea>
+      <p class="muted small">
+        Nota: algunas tipografías Unicode pueden verse diferente según dispositivo.
+      </p>
+    </section>
+  </main>
+
+  <footer class="wrap muted small">
+    Hecho para publicar posts más legibles en LinkedIn usando Unicode.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
