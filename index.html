@@ -17,20 +17,21 @@
       <h2>Editor</h2>
 
       <div class="toolbar">
-        <button data-style="bold" type="button">𝗕</button>
-        <button data-style="italic" type="button">𝘐</button>
-        <button data-style="mono" type="button">𝙼</button>
+        <button data-style="bold" type="button" title="Negrita Unicode">𝗕</button>
+        <button data-style="italic" type="button" title="Itálica Unicode">𝘐</button>
+        <button data-style="mono" type="button" title="Monoespaciado Unicode">𝙼</button>
 
         <span class="sep"></span>
 
-        <button id="bulletDot" type="button">• Bullets</button>
-        <button id="bulletCheck" type="button">✅ Bullets</button>
-        <button id="separator" type="button">Insertar separador</button>
+        <button id="bulletDot" type="button" title="Convertir líneas a bullets •">• Bullets</button>
+        <button id="bulletCheck" type="button" title="Convertir líneas a bullets ✅">✅ Bullets</button>
+        <button id="separator" type="button" title="Insertar separador">Insertar separador</button>
 
         <span class="sep"></span>
 
+        <!-- Select mínimo: se llena por JS con optgroups -->
         <select id="iconSelect" aria-label="Insertar ícono">
-              <option value="">Insertar ícono…</option>
+          <option value="">Insertar ícono…</option>
         </select>
       </div>
 
