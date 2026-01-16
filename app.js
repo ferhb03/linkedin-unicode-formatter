@@ -351,7 +351,7 @@ clearBtn.addEventListener("click", () => {
 });
 
 // Sync en vivo
-editor.addEventListener("input", syncOutput);
+editor.addEventListener("editor", syncOutput);
 
 // Init
 syncOutput();
