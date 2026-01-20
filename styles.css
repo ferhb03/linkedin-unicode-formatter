@@ -131,6 +131,11 @@ textarea {
   flex-wrap: wrap;
 }
 
+/* Unicode message footer spacing*/
+.unicode-note {
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
 .actions { display: flex; gap: 8px; }
 
 /* Optional: make build info subtle in light mode too */
