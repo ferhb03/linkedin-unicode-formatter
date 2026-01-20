@@ -1,16 +1,30 @@
 :root {
-  --bg: #808080;
+  /* Dark (default) */
+  --bg: #0b0f14;
   --panel: #111824;
   --text: #e7eef7;
   --muted: #9fb0c3;
   --border: #223047;
   --btn: #1b2a42;
   --btn2: #233a5f;
+
+  --input-bg: #0e1520;
 }
 
-* {
-  box-sizing: border-box;
+/* Light theme overrides */
+body.theme-light {
+  --bg: #f3f4f6;
+  --panel: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #d1d5db;
+  --btn: #e5e7eb;
+  --btn2: #d1d5db;
+
+  --input-bg: #ffffff;
 }
+
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -19,58 +33,33 @@ body {
   color: var(--text);
 }
 
-.wrap {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 18px;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-}
-
-@media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* PANEL */
+.wrap { max-width: 1100px; margin: 0 auto; padding: 18px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
 
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;
-
-  display: flex;
-  flex-direction: column;
-  min-height: 620px; /* Ajustá este valor si querés más o menos alto */
 }
 
-/* TITLES */
+h1 { margin: 0 0 6px; font-size: 22px; }
+h2 { margin: 0 0 10px; font-size: 16px; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
 
-h1 {
-  margin: 0 0 6px;
-  font-size: 22px;
+/* Toggle button in header */
+.theme-toggle{
+  margin-top: 10px;
+  background: var(--btn);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
 }
-
-h2 {
-  margin: 0 0 10px;
-  font-size: 16px;
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.small {
-  font-size: 12px;
-}
-
-/* TOOLBAR */
+.theme-toggle:hover { background: var(--btn2); }
 
 .toolbar {
   display: flex;
@@ -80,8 +69,7 @@ h2 {
   align-items: center;
 }
 
-button,
-select {
+button, select {
   background: var(--btn);
   color: var(--text);
   border: 1px solid var(--border);
@@ -90,33 +78,20 @@ select {
   cursor: pointer;
 }
 
-button:hover,
-select:hover {
-  background: var(--btn2);
-}
+button:hover, select:hover { background: var(--btn2); }
+button.ghost { background: transparent; }
 
-button.ghost {
-  background: transparent;
-}
+.sep { width: 1px; height: 26px; background: var(--border); margin: 0 4px; }
 
-.sep {
-  width: 1px;
-  height: 26px;
-  background: var(--border);
-  margin: 0 4px;
-}
-
-/* EDITOR (DIV contenteditable) */
-
-.editor {
+/* Editor */
+.editor{
   width: 100%;
-  flex: 1;
-  min-height: 0;
-
+  min-height: 320px;
+  resize: vertical;
   padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: #0e1520;
+  background: var(--input-bg);
   color: var(--text);
   font-size: 14px;
   line-height: 1.5;
@@ -124,29 +99,24 @@ button.ghost {
   white-space: pre-wrap;
 }
 
-.editor:empty:before {
+.editor:empty:before{
   content: attr(data-placeholder);
   color: var(--muted);
 }
 
-/* OUTPUT (TEXTAREA) */
-
+/* Output textarea */
 textarea {
   width: 100%;
-  flex: 1;
-  min-height: 0;
-  resize: none;
-
+  min-height: 320px;
+  resize: vertical;
   padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: #0e1520;
+  background: var(--input-bg);
   color: var(--text);
   font-size: 14px;
   line-height: 1.5;
 }
-
-/* FOOTER META */
 
 .meta {
   display: flex;
@@ -157,25 +127,7 @@ textarea {
   flex-wrap: wrap;
 }
 
-.actions {
-  display: flex;
-  gap: 8px;
-}
+.actions { display: flex; gap: 8px; }
 
-/* OPTIONAL: nicer scrollbars (WebKit) */
-
-.editor::-webkit-scrollbar,
-textarea::-webkit-scrollbar {
-  width: 10px;
-}
-
-.editor::-webkit-scrollbar-thumb,
-textarea::-webkit-scrollbar-thumb {
-  background: #1f2d45;
-  border-radius: 10px;
-}
-
-.editor::-webkit-scrollbar-track,
-textarea::-webkit-scrollbar-track {
-  background: #0e1520;
-}
+/* Optional: make build info subtle in light mode too */
+.build-info { margin-top: 6px; }
