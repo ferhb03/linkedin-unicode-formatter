@@ -21,6 +21,32 @@ const iconSelect = document.getElementById("iconSelect");
 const clearFormatBtn = document.getElementById("clearFormat");
 const toolbarButtons = document.querySelectorAll('button[data-style]');
 
+const themeToggle = document.getElementById("themeToggle");
+
+function setTheme(mode) {
+  const isLight = mode === "light";
+  document.body.classList.toggle("theme-light", isLight);
+
+  if (themeToggle) {
+    themeToggle.textContent = isLight ? "🌙 Oscuro" : "☀️ Claro";
+  }
+
+  localStorage.setItem("theme", mode);
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem("theme");
+  setTheme(saved === "light" ? "light" : "dark");
+})();
+
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    const isLight = document.body.classList.contains("theme-light");
+    setTheme(isLight ? "dark" : "light");
+  });
+}
+
+
 // Guard rails (si falta algo en HTML, evitamos romper todo)
 if (!editor || !output || !charCount) {
   console.error("Faltan elementos esenciales (editor/output/charCount). Revisá ids en index.html");
