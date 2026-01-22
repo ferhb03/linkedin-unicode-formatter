@@ -210,9 +210,7 @@ function insertPlainTextWithNewlines(text) {
 }
 
 function wrapSelectionWithTag(tagName) {
-  if (!editor) return;
   editor.focus();
-
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return;
 
@@ -223,17 +221,17 @@ function wrapSelectionWithTag(tagName) {
   wrapper.appendChild(range.extractContents());
   range.insertNode(wrapper);
 
+  // Mantener la selección sobre el contenido aplicado (NO colapsar)
   sel.removeAllRanges();
   const newRange = document.createRange();
   newRange.selectNodeContents(wrapper);
-  newRange.collapse(false);
   sel.addRange(newRange);
+
+  syncOutput();
 }
 
 function wrapSelectionWithSpanAttr(attrName, attrValue) {
-  if (!editor) return;
   editor.focus();
-
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return;
 
@@ -245,11 +243,13 @@ function wrapSelectionWithSpanAttr(attrName, attrValue) {
   span.appendChild(range.extractContents());
   range.insertNode(span);
 
+  // Mantener la selección sobre el contenido aplicado (NO colapsar)
   sel.removeAllRanges();
   const newRange = document.createRange();
   newRange.selectNodeContents(span);
-  newRange.collapse(false);
   sel.addRange(newRange);
+
+  syncOutput();
 }
 
 // ---------- Convert editor HTML -> Unicode text ----------
@@ -331,10 +331,29 @@ function syncOutput() {
 }
 
 // ---------- Clear Format (Tx) ----------
+// Convierte texto plano a fragmento con <br> (para mantener saltos)
+function plainTextToFragment(text) {
+  const frag = document.createDocumentFragment();
+  const parts = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  parts.forEach((part, idx) => {
+    frag.appendChild(document.createTextNode(part));
+    if (idx < parts.length - 1) frag.appendChild(document.createElement("br"));
+  });
+  return frag;
+}
+
+// Convierte el fragmento seleccionado a texto plano preservando saltos visuales
+function selectionFragmentToPlainText(range) {
+  const frag = range.cloneContents();
+  const tmp = document.createElement("div");
+  tmp.appendChild(frag);
+  return tmp.innerText; // respeta saltos visuales de <div>/<p>/<br>
+}
+
 function stripAllFormatting() {
   if (!editor) return;
-  const plain = editor.innerText;   // respeta saltos
-  editor.textContent = plain;       // elimina HTML
+  const plain = editor.innerText; // conserva saltos visuales
+  editor.textContent = plain;     // elimina HTML
   syncOutput();
 }
 
@@ -346,24 +365,47 @@ function stripSelectionFormatting() {
   if (!sel || sel.rangeCount === 0) return;
 
   const range = sel.getRangeAt(0);
+
+  // Si no hay selección => limpiar todo
   if (range.collapsed) {
     stripAllFormatting();
     return;
   }
 
-  const selectedPlain = sel.toString();
+  // 1) Texto plano de la selección (con saltos)
+  const plain = selectionFragmentToPlainText(range);
+
+  // 2) Reemplazar selección por texto plano
   range.deleteContents();
-  insertPlainTextWithNewlines(selectedPlain);
+
+  // Marcadores para poder re-seleccionar exactamente lo insertado
+  const startMarker = document.createTextNode("");
+  const endMarker = document.createTextNode("");
+
+  range.insertNode(endMarker);
+  range.insertNode(plainTextToFragment(plain));
+  range.insertNode(startMarker);
+
+  // 3) Restaurar selección entre marcadores
+  sel.removeAllRanges();
+  const newRange = document.createRange();
+  newRange.setStartAfter(startMarker);
+  newRange.setEndBefore(endMarker);
+  sel.addRange(newRange);
+
+  // 4) Limpiar marcadores
+  startMarker.parentNode && startMarker.parentNode.removeChild(startMarker);
+  endMarker.parentNode && endMarker.parentNode.removeChild(endMarker);
+
   syncOutput();
 }
 
 if (clearFormatBtn) {
   clearFormatBtn.addEventListener("click", () => {
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) stripSelectionFormatting();
-    else stripAllFormatting();
+    stripSelectionFormatting(); // decide solo vs todo según haya selección
   });
 }
+
 
 // ---------- Toolbar buttons (B / I / S / M) ----------
 toolbarButtons.forEach(btn => {
