@@ -330,116 +330,117 @@ function syncOutput() {
   charCount.textContent = String(unicodeText.length);
 }
 
-// ---------- Tx: quitar formato (selección o todo) - FIX ----------
+// ---------- Tx: quitar formato (selección o todo) - SAFE ----------
 
-function isFormatWrapper(el) {
-  return (
-    el &&
-    el.nodeType === 1 &&
-    (el.matches("code") ||
-      el.matches('span[data-script="1"]') ||
-      el.matches("b, strong, i, em"))
-  );
-}
+// Convierte un DocumentFragment (HTML) a texto plano preservando saltos:
+// - <br> => \n
+// - <div>/<p> => agrega \n al final (si corresponde)
+function fragmentToPlainText(fragment) {
+  let out = "";
 
-function nearestFormatWrapper(node) {
-  let n = node;
-  while (n && n !== editor) {
-    if (n.nodeType === 1 && isFormatWrapper(n)) return n;
-    n = n.parentNode;
+  function walk(node) {
+    node.childNodes.forEach((child) => {
+      if (child.nodeType === Node.TEXT_NODE) {
+        out += child.nodeValue;
+        return;
+      }
+      if (child.nodeType !== Node.ELEMENT_NODE) return;
+
+      const tag = child.tagName.toLowerCase();
+
+      if (tag === "br") {
+        out += "\n";
+        return;
+      }
+
+      // Bloques comunes
+      if (tag === "div" || tag === "p") {
+        walk(child);
+        out += "\n";
+        return;
+      }
+
+      // Listas
+      if (tag === "li") {
+        const before = out.length;
+        walk(child);
+        const liText = out.slice(before).trim();
+        // si querés mantener bullet visual en editor, descomentá:
+        // if (liText) out = out.slice(0, before) + `• ${liText}\n`;
+        // else out += "\n";
+        return;
+      }
+
+      // Inline / wrappers (b,i,code,span data-script, etc.)
+      walk(child);
+    });
   }
-  return null;
-}
 
-function unwrapElement(el) {
-  const parent = el.parentNode;
-  if (!parent) return;
+  walk(fragment);
 
-  while (el.firstChild) parent.insertBefore(el.firstChild, el);
-  parent.removeChild(el);
+  // Normalizaciones suaves
+  out = out
+    .replace(/\u00A0/g, " ")
+    .replace(/\n{5,}/g, "\n\n\n\n")
+    .replace(/[ \t]+\n/g, "\n"); // trailing spaces antes de salto
+
+  return out;
 }
 
 function plainTextToFragment(text) {
   const frag = document.createDocumentFragment();
-  const parts = (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const parts = (text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n");
+
   parts.forEach((part, idx) => {
     frag.appendChild(document.createTextNode(part));
     if (idx < parts.length - 1) frag.appendChild(document.createElement("br"));
   });
+
   return frag;
 }
 
 function stripAllFormatting() {
+  if (!editor) return;
   const plain = editor.innerText;   // conserva saltos visuales
   editor.textContent = plain;       // elimina HTML
   syncOutput();
 }
 
 function stripSelectionFormatting() {
+  if (!editor) return;
   editor.focus();
 
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return;
 
-  let range = sel.getRangeAt(0);
+  const range = sel.getRangeAt(0);
+
+  // Sin selección -> todo
   if (range.collapsed) {
     stripAllFormatting();
     return;
   }
 
-  // 1) Guardar el texto "visible" de la selección
-  const selectedPlain = sel.toString();
+  // 1) Copiar SOLO el contenido seleccionado (con wrappers incluidos)
+  const fragment = range.cloneContents();
 
-  // 2) Caso clave: si el rango está dentro de un wrapper (code/span/b/i),
-  //    lo desempaquetamos antes de reinsertar texto, para no volver a caer adentro.
-  const startWrap = nearestFormatWrapper(range.startContainer);
-  const endWrap = nearestFormatWrapper(range.endContainer);
+  // 2) Convertir esa selección a texto plano (sin formato)
+  const selectedPlain = fragmentToPlainText(fragment).trimEnd();
 
-  // Si ambos extremos están dentro del MISMO wrapper, lo unwrappeamos
-  // (es el caso típico: seleccionaste justo lo formateado)
-  if (startWrap && startWrap === endWrap) {
-    unwrapElement(startWrap);
-    // Releer el range porque cambió el DOM
-    sel.removeAllRanges();
-    range = document.createRange();
-
-    // Re-posicionar rango intentando mantener la selección por texto:
-    // estrategia simple y estable: seleccionar nuevamente la ocurrencia más cercana
-    // usando el editor como referencia.
-    // (Si querés “exactitud quirúrgica” se puede hacer con marcadores; esta versión ya resuelve el bug práctico.)
-    const textNode = editor.firstChild;
-    range.selectNodeContents(editor);
-    sel.addRange(range);
-
-    // Volvemos a setear range a la selección actual
-    range = sel.getRangeAt(0);
-  }
-
-  // 3) Quitar formato nativo (b/i) si el browser lo soporta
-  try { document.execCommand("removeFormat"); } catch {}
-
-  // 4) Reemplazar la selección por texto plano (sin tags)
-  // Insertamos con fragmento para respetar saltos
-  range = sel.getRangeAt(0);
+  // 3) Reemplazar SOLO lo seleccionado (no tocar lo demás)
   range.deleteContents();
+  const inserted = plainTextToFragment(selectedPlain);
+  range.insertNode(inserted);
 
-  const startMarker = document.createTextNode("");
-  const endMarker = document.createTextNode("");
-
-  range.insertNode(endMarker);
-  range.insertNode(plainTextToFragment(selectedPlain));
-  range.insertNode(startMarker);
-
-  // 5) Restaurar selección entre marcadores
+  // 4) Dejar caret al final de lo insertado (estable)
   sel.removeAllRanges();
   const newRange = document.createRange();
-  newRange.setStartAfter(startMarker);
-  newRange.setEndBefore(endMarker);
+  newRange.selectNodeContents(editor);
+  newRange.collapse(false);
   sel.addRange(newRange);
-
-  // 6) Limpiar marcadores
-  startMarker.parentNode && startMarker.parentNode.removeChild(startMarker);
-  endMarker.parentNode && endMarker.parentNode.removeChild(endMarker);
 
   syncOutput();
 }
@@ -447,8 +448,11 @@ function stripSelectionFormatting() {
 if (clearFormatBtn) {
   clearFormatBtn.addEventListener("click", () => {
     const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) stripSelectionFormatting();
-    else stripAllFormatting();
+    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) {
+      stripSelectionFormatting();
+    } else {
+      stripAllFormatting();
+    }
   });
 }
 
