@@ -418,32 +418,55 @@ function stripSelectionFormatting() {
 
   const range = sel.getRangeAt(0);
 
-  // Sin selección -> todo
+  // Sin selección -> todo el editor
   if (range.collapsed) {
     stripAllFormatting();
     return;
   }
 
-  // 1) Copiar SOLO el contenido seleccionado (con wrappers incluidos)
-  const fragment = range.cloneContents();
+  // 1) EXTRAER lo seleccionado (esto hace split de wrappers si corresponde)
+  const extracted = range.extractContents();
 
-  // 2) Convertir esa selección a texto plano (sin formato)
-  const selectedPlain = fragmentToPlainText(fragment).trimEnd();
+  // 2) Convertir SOLO esa selección a texto plano
+  const selectedPlain = fragmentToPlainText(extracted);
 
-  // 3) Reemplazar SOLO lo seleccionado (no tocar lo demás)
-  range.deleteContents();
-  const inserted = plainTextToFragment(selectedPlain);
-  range.insertNode(inserted);
+  // 3) Insertar el texto plano preservando saltos
+  const frag = plainTextToFragment(selectedPlain);
 
-  // 4) Dejar caret al final de lo insertado (estable)
+  // Marcadores para poder reconstruir selección sin tocar texto afuera
+  const startMarker = document.createTextNode("");
+  const endMarker = document.createTextNode("");
+
+  range.insertNode(endMarker);
+  range.insertNode(frag);
+  range.insertNode(startMarker);
+
+  // 4) Restaurar selección exactamente entre marcadores (sin ir al final)
+  const parent = startMarker.parentNode;
+  if (!parent) {
+    syncOutput();
+    return;
+  }
+
+  const nodes = Array.from(parent.childNodes);
+  const startIndex = nodes.indexOf(startMarker);
+  const endIndex = nodes.indexOf(endMarker);
+
   sel.removeAllRanges();
   const newRange = document.createRange();
-  newRange.selectNodeContents(editor);
-  newRange.collapse(false);
+
+  // Selección: desde justo después del startMarker hasta justo antes del endMarker
+  newRange.setStart(parent, startIndex + 1);
+  newRange.setEnd(parent, endIndex);
   sel.addRange(newRange);
+
+  // 5) Quitar marcadores (en este orden para no romper offsets)
+  endMarker.remove();
+  startMarker.remove();
 
   syncOutput();
 }
+
 
 if (clearFormatBtn) {
   clearFormatBtn.addEventListener("click", () => {
