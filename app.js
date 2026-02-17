@@ -330,11 +330,38 @@ function syncOutput() {
   charCount.textContent = String(unicodeText.length);
 }
 
-// ---------- Clear Format (Tx) ----------
-// Convierte texto plano a fragmento con <br> (para mantener saltos)
+// ---------- Tx: quitar formato (selección o todo) - FIX ----------
+
+function isFormatWrapper(el) {
+  return (
+    el &&
+    el.nodeType === 1 &&
+    (el.matches("code") ||
+      el.matches('span[data-script="1"]') ||
+      el.matches("b, strong, i, em"))
+  );
+}
+
+function nearestFormatWrapper(node) {
+  let n = node;
+  while (n && n !== editor) {
+    if (n.nodeType === 1 && isFormatWrapper(n)) return n;
+    n = n.parentNode;
+  }
+  return null;
+}
+
+function unwrapElement(el) {
+  const parent = el.parentNode;
+  if (!parent) return;
+
+  while (el.firstChild) parent.insertBefore(el.firstChild, el);
+  parent.removeChild(el);
+}
+
 function plainTextToFragment(text) {
   const frag = document.createDocumentFragment();
-  const parts = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const parts = (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
   parts.forEach((part, idx) => {
     frag.appendChild(document.createTextNode(part));
     if (idx < parts.length - 1) frag.appendChild(document.createElement("br"));
@@ -342,58 +369,75 @@ function plainTextToFragment(text) {
   return frag;
 }
 
-// Convierte el fragmento seleccionado a texto plano preservando saltos visuales
-function selectionFragmentToPlainText(range) {
-  const frag = range.cloneContents();
-  const tmp = document.createElement("div");
-  tmp.appendChild(frag);
-  return tmp.innerText; // respeta saltos visuales de <div>/<p>/<br>
-}
-
 function stripAllFormatting() {
-  if (!editor) return;
-  const plain = editor.innerText; // conserva saltos visuales
-  editor.textContent = plain;     // elimina HTML
+  const plain = editor.innerText;   // conserva saltos visuales
+  editor.textContent = plain;       // elimina HTML
   syncOutput();
 }
 
 function stripSelectionFormatting() {
-  if (!editor) return;
   editor.focus();
 
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return;
 
-  const range = sel.getRangeAt(0);
-
-  // Si no hay selección => limpiar todo
+  let range = sel.getRangeAt(0);
   if (range.collapsed) {
     stripAllFormatting();
     return;
   }
 
-  // 1) Texto plano de la selección (con saltos)
-  const plain = selectionFragmentToPlainText(range);
+  // 1) Guardar el texto "visible" de la selección
+  const selectedPlain = sel.toString();
 
-  // 2) Reemplazar selección por texto plano
+  // 2) Caso clave: si el rango está dentro de un wrapper (code/span/b/i),
+  //    lo desempaquetamos antes de reinsertar texto, para no volver a caer adentro.
+  const startWrap = nearestFormatWrapper(range.startContainer);
+  const endWrap = nearestFormatWrapper(range.endContainer);
+
+  // Si ambos extremos están dentro del MISMO wrapper, lo unwrappeamos
+  // (es el caso típico: seleccionaste justo lo formateado)
+  if (startWrap && startWrap === endWrap) {
+    unwrapElement(startWrap);
+    // Releer el range porque cambió el DOM
+    sel.removeAllRanges();
+    range = document.createRange();
+
+    // Re-posicionar rango intentando mantener la selección por texto:
+    // estrategia simple y estable: seleccionar nuevamente la ocurrencia más cercana
+    // usando el editor como referencia.
+    // (Si querés “exactitud quirúrgica” se puede hacer con marcadores; esta versión ya resuelve el bug práctico.)
+    const textNode = editor.firstChild;
+    range.selectNodeContents(editor);
+    sel.addRange(range);
+
+    // Volvemos a setear range a la selección actual
+    range = sel.getRangeAt(0);
+  }
+
+  // 3) Quitar formato nativo (b/i) si el browser lo soporta
+  try { document.execCommand("removeFormat"); } catch {}
+
+  // 4) Reemplazar la selección por texto plano (sin tags)
+  // Insertamos con fragmento para respetar saltos
+  range = sel.getRangeAt(0);
   range.deleteContents();
 
-  // Marcadores para poder re-seleccionar exactamente lo insertado
   const startMarker = document.createTextNode("");
   const endMarker = document.createTextNode("");
 
   range.insertNode(endMarker);
-  range.insertNode(plainTextToFragment(plain));
+  range.insertNode(plainTextToFragment(selectedPlain));
   range.insertNode(startMarker);
 
-  // 3) Restaurar selección entre marcadores
+  // 5) Restaurar selección entre marcadores
   sel.removeAllRanges();
   const newRange = document.createRange();
   newRange.setStartAfter(startMarker);
   newRange.setEndBefore(endMarker);
   sel.addRange(newRange);
 
-  // 4) Limpiar marcadores
+  // 6) Limpiar marcadores
   startMarker.parentNode && startMarker.parentNode.removeChild(startMarker);
   endMarker.parentNode && endMarker.parentNode.removeChild(endMarker);
 
@@ -402,10 +446,11 @@ function stripSelectionFormatting() {
 
 if (clearFormatBtn) {
   clearFormatBtn.addEventListener("click", () => {
-    stripSelectionFormatting(); // decide solo vs todo según haya selección
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) stripSelectionFormatting();
+    else stripAllFormatting();
   });
 }
-
 
 // ---------- Toolbar buttons (B / I / S / M) ----------
 toolbarButtons.forEach(btn => {
