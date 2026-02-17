@@ -330,61 +330,65 @@ function syncOutput() {
   charCount.textContent = String(unicodeText.length);
 }
 
-// ---------- Tx: quitar formato (selección o todo) - SAFE ----------
+// ---------- Tx: quitar formato (selección o todo) - STABLE ----------
 
-// Convierte un DocumentFragment (HTML) a texto plano preservando saltos:
-// - <br> => \n
-// - <div>/<p> => agrega \n al final (si corresponde)
-function fragmentToPlainText(fragment) {
+// wrappers que usamos para "formato visual" en el editor
+function isFormatWrapper(el) {
+  return (
+    el &&
+    el.nodeType === 1 &&
+    (el.matches("code") ||
+      el.matches('span[data-script="1"]') ||
+      el.matches("b, strong, i, em"))
+  );
+}
+
+function nearestFormatWrapper(node) {
+  let n = node;
+  while (n && n !== editor) {
+    if (n.nodeType === 1 && isFormatWrapper(n)) return n;
+    n = n.parentNode;
+  }
+  return null;
+}
+
+// Convierte un fragment/Node a texto "visible" preservando saltos
+function nodeToPlainText(node) {
   let out = "";
 
-  function walk(node) {
-    node.childNodes.forEach((child) => {
-      if (child.nodeType === Node.TEXT_NODE) {
-        out += child.nodeValue;
-        return;
-      }
-      if (child.nodeType !== Node.ELEMENT_NODE) return;
+  function walk(n) {
+    if (!n) return;
 
-      const tag = child.tagName.toLowerCase();
+    if (n.nodeType === Node.TEXT_NODE) {
+      out += n.nodeValue;
+      return;
+    }
 
-      if (tag === "br") {
-        out += "\n";
-        return;
-      }
+    if (n.nodeType !== Node.ELEMENT_NODE) return;
 
-      // Bloques comunes
-      if (tag === "div" || tag === "p") {
-        walk(child);
-        out += "\n";
-        return;
-      }
+    const tag = n.tagName.toLowerCase();
 
-      // Listas
-      if (tag === "li") {
-        const before = out.length;
-        walk(child);
-        const liText = out.slice(before).trim();
-        // si querés mantener bullet visual en editor, descomentá:
-        // if (liText) out = out.slice(0, before) + `• ${liText}\n`;
-        // else out += "\n";
-        return;
-      }
+    if (tag === "br") {
+      out += "\n";
+      return;
+    }
 
-      // Inline / wrappers (b,i,code,span data-script, etc.)
-      walk(child);
-    });
+    // bloques: terminan en salto de línea
+    const isBlock = tag === "div" || tag === "p" || tag === "li";
+
+    // UL/OL: solo recorremos hijos
+    n.childNodes.forEach(walk);
+
+    if (isBlock) out += "\n";
   }
 
-  walk(fragment);
+  walk(node);
 
-  // Normalizaciones suaves
-  out = out
+  // normalizaciones suaves
+  return out
     .replace(/\u00A0/g, " ")
     .replace(/\n{5,}/g, "\n\n\n\n")
-    .replace(/[ \t]+\n/g, "\n"); // trailing spaces antes de salto
-
-  return out;
+    .trimEnd();
 }
 
 function plainTextToFragment(text) {
@@ -404,8 +408,8 @@ function plainTextToFragment(text) {
 
 function stripAllFormatting() {
   if (!editor) return;
-  const plain = editor.innerText;   // conserva saltos visuales
-  editor.textContent = plain;       // elimina HTML
+  const plain = editor.innerText;    // respeta saltos visuales
+  editor.textContent = plain;        // elimina HTML
   syncOutput();
 }
 
@@ -417,67 +421,119 @@ function stripSelectionFormatting() {
   if (!sel || sel.rangeCount === 0) return;
 
   const range = sel.getRangeAt(0);
-
-  // Sin selección -> todo el editor
   if (range.collapsed) {
     stripAllFormatting();
     return;
   }
 
-  // 1) EXTRAER lo seleccionado (esto hace split de wrappers si corresponde)
-  const extracted = range.extractContents();
+  // 1) Obtener texto "visible" de la selección (con saltos)
+  const cloned = range.cloneContents();
+  const tmp = document.createElement("div");
+  tmp.appendChild(cloned);
+  const selectedPlain = nodeToPlainText(tmp);
 
-  // 2) Convertir SOLO esa selección a texto plano
-  const selectedPlain = fragmentToPlainText(extracted);
+  // 2) Caso clave: selección totalmente dentro del MISMO wrapper
+  const wStart = nearestFormatWrapper(range.startContainer);
+  const wEnd = nearestFormatWrapper(range.endContainer);
 
-  // 3) Insertar el texto plano preservando saltos
-  const frag = plainTextToFragment(selectedPlain);
+  if (wStart && wStart === wEnd) {
+    const w = wStart;
+    const parent = w.parentNode;
+    if (!parent) return;
 
-  // Marcadores para poder reconstruir selección sin tocar texto afuera
-  const startMarker = document.createTextNode("");
-  const endMarker = document.createTextNode("");
+    // Rango del wrapper completo
+    const wRange = document.createRange();
+    wRange.selectNodeContents(w);
 
-  range.insertNode(endMarker);
-  range.insertNode(frag);
-  range.insertNode(startMarker);
+    // before = wrapperStart -> selectionStart
+    const beforeRange = document.createRange();
+    beforeRange.setStart(wRange.startContainer, wRange.startOffset);
+    beforeRange.setEnd(range.startContainer, range.startOffset);
 
-  // 4) Restaurar selección exactamente entre marcadores (sin ir al final)
-  const parent = startMarker.parentNode;
-  if (!parent) {
+    // after = selectionEnd -> wrapperEnd
+    const afterRange = document.createRange();
+    afterRange.setStart(range.endContainer, range.endOffset);
+    afterRange.setEnd(wRange.endContainer, wRange.endOffset);
+
+    const beforeFrag = beforeRange.cloneContents();
+    const afterFrag = afterRange.cloneContents();
+
+    // Insertamos en el lugar donde estaba el wrapper
+    const ref = w;
+
+    // wrapper BEFORE (si hay contenido)
+    if (beforeFrag.textContent && beforeFrag.textContent.trim().length > 0) {
+      const w1 = w.cloneNode(false);
+      w1.appendChild(beforeFrag);
+      parent.insertBefore(w1, ref);
+    }
+
+    // Marcadores + texto plano (sin wrapper)
+    const startMarker = document.createTextNode("");
+    const endMarker = document.createTextNode("");
+
+    parent.insertBefore(startMarker, ref);
+    parent.insertBefore(plainTextToFragment(selectedPlain), ref);
+    parent.insertBefore(endMarker, ref);
+
+    // wrapper AFTER (si hay contenido)
+    if (afterFrag.textContent && afterFrag.textContent.trim().length > 0) {
+      const w2 = w.cloneNode(false);
+      w2.appendChild(afterFrag);
+      parent.insertBefore(w2, ref);
+    }
+
+    // Remover wrapper original
+    parent.removeChild(w);
+
+    // Restaurar selección entre marcadores
+    sel.removeAllRanges();
+    const newRange = document.createRange();
+    newRange.setStartAfter(startMarker);
+    newRange.setEndBefore(endMarker);
+    sel.addRange(newRange);
+
+    // Limpiar marcadores
+    startMarker.parentNode && startMarker.parentNode.removeChild(startMarker);
+    endMarker.parentNode && endMarker.parentNode.removeChild(endMarker);
+
     syncOutput();
     return;
   }
 
-  const nodes = Array.from(parent.childNodes);
-  const startIndex = nodes.indexOf(startMarker);
-  const endIndex = nodes.indexOf(endMarker);
+  // 3) Fallback general: reemplazar selección por texto plano (puede quedar dentro de wrappers externos)
+  range.deleteContents();
+
+  const startMarker = document.createTextNode("");
+  const endMarker = document.createTextNode("");
+
+  range.insertNode(endMarker);
+  range.insertNode(plainTextToFragment(selectedPlain));
+  range.insertNode(startMarker);
 
   sel.removeAllRanges();
   const newRange = document.createRange();
-
-  // Selección: desde justo después del startMarker hasta justo antes del endMarker
-  newRange.setStart(parent, startIndex + 1);
-  newRange.setEnd(parent, endIndex);
+  newRange.setStartAfter(startMarker);
+  newRange.setEndBefore(endMarker);
   sel.addRange(newRange);
 
-  // 5) Quitar marcadores (en este orden para no romper offsets)
-  endMarker.remove();
-  startMarker.remove();
+  startMarker.parentNode && startMarker.parentNode.removeChild(startMarker);
+  endMarker.parentNode && endMarker.parentNode.removeChild(endMarker);
+
+  // Para b/i nativos, intenta limpiar también
+  try { document.execCommand("removeFormat"); } catch {}
 
   syncOutput();
 }
 
-
 if (clearFormatBtn) {
   clearFormatBtn.addEventListener("click", () => {
     const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) {
-      stripSelectionFormatting();
-    } else {
-      stripAllFormatting();
-    }
+    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) stripSelectionFormatting();
+    else stripAllFormatting();
   });
 }
+
 
 // ---------- Toolbar buttons (B / I / S / M) ----------
 toolbarButtons.forEach(btn => {
