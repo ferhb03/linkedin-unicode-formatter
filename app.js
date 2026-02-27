@@ -262,7 +262,7 @@ function htmlToUnicode(html) {
   return raw
     .replace(/\u00A0/g, " ")
     .replace(/\n{5,}/g, "\n\n\n\n")
-    .trimEnd();
+    .replace(/[ \t]+$/g, "");
 }
 
 function walkNode(node, style) {
