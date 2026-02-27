@@ -610,7 +610,18 @@ if (editor) {
     insertPlainTextWithNewlines(text);
     syncOutput();
   });
-}
 
+  editor.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+  
+      // Inserta un salto tipo <br> (más estable para nuestro parser)
+      document.execCommand("insertLineBreak");
+  
+      syncOutput();
+    }
+  });
+}
+  
 // Init
 syncOutput();
