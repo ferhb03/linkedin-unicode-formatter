@@ -339,7 +339,6 @@ function syncOutput() {
   const words = plainText ? plainText.split(/\s+/).length : 0;
   wordCount.textContent = String(words);
 }
-}
 
 // ---------- Tx: quitar formato (selección o todo) - STABLE ----------
 
