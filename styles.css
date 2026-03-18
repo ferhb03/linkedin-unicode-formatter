@@ -140,3 +140,16 @@ textarea {
 
 /* Optional: make build info subtle in light mode too */
 .build-info { margin-top: 6px; }
+
+/* Add one column to align Counters */
+.counters {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.counters strong {
+  color: #111827;
+}
