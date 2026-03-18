@@ -23,6 +23,8 @@ const toolbarButtons = document.querySelectorAll('button[data-style]');
 
 const themeToggle = document.getElementById("themeToggle");
 
+const wordCount = document.getElementById("wordCount");
+
 function setTheme(mode) {
   const isLight = mode === "light";
   document.body.classList.toggle("theme-light", isLight);
@@ -324,10 +326,19 @@ function applyUnicodeStyle(text, style) {
 
 // ---------- Sync Output ----------
 function syncOutput() {
-  if (!editor || !output || !charCount) return;
+  if (!editor || !output || !charCount || !wordCount) return;
+
   const unicodeText = htmlToUnicode(editor.innerHTML);
   output.value = unicodeText;
   charCount.textContent = String(unicodeText.length);
+
+  const plainText = editor.innerText
+    .replace(/\u00A0/g, " ")
+    .trim();
+
+  const words = plainText ? plainText.split(/\s+/).length : 0;
+  wordCount.textContent = String(words);
+}
 }
 
 // ---------- Tx: quitar formato (selección o todo) - STABLE ----------
