@@ -16,7 +16,7 @@
   </header>
 
   <main class="wrap grid">
-    <section class="panel">
+  <section class="panel">
       <h2>Editor</h2>
 
 <div class="toolbar">
@@ -36,15 +36,18 @@
 
     <div id="editor" class="editor" contenteditable="true" spellcheck="true" data-placeholder="Escribí tu post acá…"></div>
 
-      <div class="meta">
-        <div>Caracteres: <strong id="charCount">0</strong></div>
-        <div>Palabras: <strong id="wordCount">0</strong></div>
-        <div class="actions">
-          <button id="copyBtn" type="button">Copiar resultado</button>
-          <button id="clearFormat" type="button" title="Quitar formato (selección o todo)">Tx</button>
-          <button id="clearBtn" type="button" class="ghost">Limpiar</button>
+        <div class="meta">
+          <div class="counters">
+            <div>Caracteres: <strong id="charCount">0</strong></div>
+            <div>Palabras: <strong id="wordCount">0</strong></div>
+          </div>
+        
+          <div class="actions">
+            <button id="copyBtn" type="button">Copiar resultado</button>
+            <button id="clearFormat" type="button" title="Quitar formato (selección o todo)">Tx</button>
+            <button id="clearBtn" type="button" class="ghost">Limpiar</button>
+          </div>
         </div>
-      </div>
     </section>
 
     <section class="panel">
