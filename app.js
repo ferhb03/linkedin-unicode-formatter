@@ -316,11 +316,12 @@ function applyUnicodeStyle(text, style) {
 
   if (style.mono) mapper = styles.mono;
   else if (style.script) mapper = styles.script;
-  else if (style.bold && style.italic) mapper = styles.boldItalic;
-  else if (style.bold) mapper = styles.bold;
-  else if (style.italic) mapper = styles.italic;
+  else if (style.bold && style.italic) mapper = styles.sansBoldItalic;
+  else if (style.bold) mapper = styles.sansBold;
+  else if (style.italic) mapper = styles.sansItalic;
 
   if (!mapper) return text;
+
   return Array.from(text).map(mapper).join("");
 }
 
