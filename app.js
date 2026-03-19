@@ -73,18 +73,18 @@ function mapDigits(ch, baseDigit) {
 }
 
 const styles = {
-  // Mathematical Bold
-  bold: (ch) => {
-    let m = mapLatin(ch, 0x1D400, 0x1D41A);
-    m = mapDigits(m, 0x1D7CE);
+  // Sans Serif Bold
+  sansBold: (ch) => {
+    let m = mapLatin(ch, 0x1D5D4, 0x1D5EE);
+    m = mapDigits(m, 0x1D7EC);
     return m;
   },
 
-  // Mathematical Italic (solo letras)
-  italic: (ch) => mapLatin(ch, 0x1D434, 0x1D44E),
+  // Sans Serif Italic (solo letras)
+  sansItalic: (ch) => mapLatin(ch, 0x1D608, 0x1D622),
 
-  // Mathematical Bold Italic (solo letras)
-  boldItalic: (ch) => mapLatin(ch, 0x1D468, 0x1D482),
+  // Sans Serif Bold Italic (solo letras)
+  sansBoldItalic: (ch) => mapLatin(ch, 0x1D63C, 0x1D656),
 
   // Mathematical Script (solo letras; con mapa para evitar huecos)
   script: (ch) => {
