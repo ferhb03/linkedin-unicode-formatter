@@ -311,6 +311,12 @@ function walkNode(node, style) {
   return out;
 }
 
+function removeDiacritics(text) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function applyUnicodeStyle(text, style) {
   let mapper = null;
 
@@ -322,7 +328,9 @@ function applyUnicodeStyle(text, style) {
 
   if (!mapper) return text;
 
-  return Array.from(text).map(mapper).join("");
+  const cleanText = removeDiacritics(text);
+
+  return Array.from(cleanText).map(mapper).join("");
 }
 
 // ---------- Sync Output ----------
