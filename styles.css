@@ -154,6 +154,8 @@ textarea {
   color: var(--text);
 }
 
-.footer-text {
-  font-size: 12px;
+.novelty-note {
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 14px;
 }
