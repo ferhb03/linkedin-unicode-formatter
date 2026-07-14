@@ -320,6 +320,9 @@ function removeDiacritics(text) {
 function applyUnicodeStyle(text, style) {
   let mapper = null;
 
+function applyUnicodeStyle(text, style) {
+  let mapper = null;
+
   if (style.mono) mapper = styles.mono;
   else if (style.script) mapper = styles.script;
   else if (style.bold && style.italic) mapper = styles.sansBoldItalic;
@@ -328,9 +331,9 @@ function applyUnicodeStyle(text, style) {
 
   if (!mapper) return text;
 
-  const cleanText = removeDiacritics(text);
+  const decomposedText = text.normalize("NFD");
 
-  return Array.from(cleanText).map(mapper).join("");
+  return Array.from(decomposedText).map(mapper).join("");
 }
 
 // ---------- Sync Output ----------
