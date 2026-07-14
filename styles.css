@@ -153,3 +153,7 @@ textarea {
 .counters strong {
   color: var(--text);
 }
+
+.footer-text {
+  font-size: 12px;
+}
