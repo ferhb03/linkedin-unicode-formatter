@@ -314,9 +314,6 @@ function walkNode(node, style) {
 function applyUnicodeStyle(text, style) {
   let mapper = null;
 
-function applyUnicodeStyle(text, style) {
-  let mapper = null;
-
   if (style.mono) mapper = styles.mono;
   else if (style.script) mapper = styles.script;
   else if (style.bold && style.italic) mapper = styles.sansBoldItalic;
