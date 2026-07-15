@@ -311,6 +311,10 @@ function walkNode(node, style) {
   return out;
 }
 
+function isCombiningMark(ch) {
+  return /[\u0300-\u036f]/.test(ch);
+}
+
 function applyUnicodeStyle(text, style) {
   let mapper = null;
 
@@ -322,9 +326,25 @@ function applyUnicodeStyle(text, style) {
 
   if (!mapper) return text;
 
-  const decomposedText = text.normalize("NFD");
+  const decomposedText = Array.from(text.normalize("NFD"));
+  let result = "";
 
-  return Array.from(decomposedText).map(mapper).join("");
+  for (let i = 0; i < decomposedText.length; i++) {
+    const ch = decomposedText[i];
+    const next = decomposedText[i + 1];
+
+    // Caso especial:
+    // í = i + acento combinable
+    // Usamos i sin punto para evitar que LinkedIn muestre el acento corrido.
+    if (ch === "i" && next && isCombiningMark(next)) {
+      result += "ı";
+      continue;
+    }
+
+    result += mapper(ch);
+  }
+
+  return result;
 }
 
 // ---------- Sync Output ----------
