@@ -439,99 +439,6 @@ function stripSelectionFormatting() {
     return;
   }
 
-function closestWrapper(node, predicate) {
-  let n = node.nodeType === Node.ELEMENT_NODE ? node : node.parentNode;
-
-  while (n && n !== editor) {
-    if (predicate(n)) return n;
-    n = n.parentNode;
-  }
-
-  return null;
-}
-
-function unwrapWrapperPreserveSelection(wrapper) {
-  const parent = wrapper.parentNode;
-  if (!parent) return;
-
-  const startMarker = document.createTextNode("");
-  const endMarker = document.createTextNode("");
-
-  parent.insertBefore(startMarker, wrapper);
-
-  while (wrapper.firstChild) {
-    parent.insertBefore(wrapper.firstChild, wrapper);
-  }
-
-  parent.insertBefore(endMarker, wrapper);
-  parent.removeChild(wrapper);
-
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-
-  const newRange = document.createRange();
-  newRange.setStartAfter(startMarker);
-  newRange.setEndBefore(endMarker);
-  sel.addRange(newRange);
-
-  if (startMarker.parentNode) startMarker.parentNode.removeChild(startMarker);
-  if (endMarker.parentNode) endMarker.parentNode.removeChild(endMarker);
-
-  syncOutput();
-}
-
-function toggleCustomWrapper(predicate, createWrapper) {
-  if (!editor) return;
-
-  editor.focus();
-
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
-
-  const range = sel.getRangeAt(0);
-  if (range.collapsed) return;
-
-  const startWrapper = closestWrapper(range.startContainer, predicate);
-  const endWrapper = closestWrapper(range.endContainer, predicate);
-
-  // Si la selección ya está dentro del mismo formato, lo quitamos
-  if (startWrapper && startWrapper === endWrapper) {
-    unwrapWrapperPreserveSelection(startWrapper);
-    return;
-  }
-
-  // Si no tiene ese formato, lo aplicamos
-  const wrapper = createWrapper();
-  wrapper.appendChild(range.extractContents());
-  range.insertNode(wrapper);
-
-  sel.removeAllRanges();
-
-  const newRange = document.createRange();
-  newRange.selectNodeContents(wrapper);
-  sel.addRange(newRange);
-
-  syncOutput();
-}
-
-function toggleScriptSelection() {
-  toggleCustomWrapper(
-    (el) => el.matches && el.matches('span[data-script="1"]'),
-    () => {
-      const span = document.createElement("span");
-      span.setAttribute("data-script", "1");
-      return span;
-    }
-  );
-}
-
-function toggleMonoSelection() {
-  toggleCustomWrapper(
-    (el) => el.matches && el.matches("code"),
-    () => document.createElement("code")
-  );
-}
-  
   // 1) Obtener texto "visible" de la selección (con saltos)
   const cloned = range.cloneContents();
   const tmp = document.createElement("div");
@@ -640,6 +547,98 @@ if (clearFormatBtn) {
   });
 }
 
+// Script & Monospace format, apply and take out with same button
+
+function closestWrapper(node, predicate) {
+  let n = node.nodeType === Node.ELEMENT_NODE ? node : node.parentNode;
+
+  while (n && n !== editor) {
+    if (predicate(n)) return n;
+    n = n.parentNode;
+  }
+
+  return null;
+}
+
+function unwrapWrapperPreserveSelection(wrapper) {
+  const parent = wrapper.parentNode;
+  if (!parent) return;
+
+  const startMarker = document.createTextNode("");
+  const endMarker = document.createTextNode("");
+
+  parent.insertBefore(startMarker, wrapper);
+
+  while (wrapper.firstChild) {
+    parent.insertBefore(wrapper.firstChild, wrapper);
+  }
+
+  parent.insertBefore(endMarker, wrapper);
+  parent.removeChild(wrapper);
+
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+
+  const newRange = document.createRange();
+  newRange.setStartAfter(startMarker);
+  newRange.setEndBefore(endMarker);
+  sel.addRange(newRange);
+
+  if (startMarker.parentNode) startMarker.parentNode.removeChild(startMarker);
+  if (endMarker.parentNode) endMarker.parentNode.removeChild(endMarker);
+
+  syncOutput();
+}
+
+function toggleCustomWrapper(predicate, createWrapper) {
+  if (!editor) return;
+
+  editor.focus();
+
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+
+  const range = sel.getRangeAt(0);
+  if (range.collapsed) return;
+
+  const startWrapper = closestWrapper(range.startContainer, predicate);
+  const endWrapper = closestWrapper(range.endContainer, predicate);
+
+  if (startWrapper && startWrapper === endWrapper) {
+    unwrapWrapperPreserveSelection(startWrapper);
+    return;
+  }
+
+  const wrapper = createWrapper();
+  wrapper.appendChild(range.extractContents());
+  range.insertNode(wrapper);
+
+  sel.removeAllRanges();
+
+  const newRange = document.createRange();
+  newRange.selectNodeContents(wrapper);
+  sel.addRange(newRange);
+
+  syncOutput();
+}
+
+function toggleScriptSelection() {
+  toggleCustomWrapper(
+    (el) => el.matches && el.matches('span[data-script="1"]'),
+    () => {
+      const span = document.createElement("span");
+      span.setAttribute("data-script", "1");
+      return span;
+    }
+  );
+}
+
+function toggleMonoSelection() {
+  toggleCustomWrapper(
+    (el) => el.matches && el.matches("code"),
+    () => document.createElement("code")
+  );
+}
 
 // ---------- Toolbar buttons (B / I / S / M) ----------
 toolbarButtons.forEach(btn => {
