@@ -334,10 +334,12 @@ function applyUnicodeStyle(text, style) {
     const next = decomposedText[i + 1];
 
     // Caso especial:
-    // í = i + acento combinable
-    // Usamos i sin punto para evitar que LinkedIn muestre el acento corrido.
+    // í = i + acento combinable.
+    // Para evitar que LinkedIn muestre mal el acento sobre la i,
+    // convertimos la i con formato y saltamos el acento.
     if (ch === "i" && next && isCombiningMark(next)) {
-      result += "ı";
+      result += mapper("i");
+      i++; // salta el acento combinable
       continue;
     }
 
