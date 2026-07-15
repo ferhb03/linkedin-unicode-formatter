@@ -38,7 +38,7 @@ function setTheme(mode) {
 
 (function initTheme() {
   const saved = localStorage.getItem("theme");
-  setTheme(saved === "light" ? "light" : "dark");
+  setTheme(saved === "dark" ? "dark" : "light");
 })();
 
 if (themeToggle) {
