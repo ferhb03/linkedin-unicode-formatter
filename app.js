@@ -354,11 +354,13 @@ function syncOutput() {
   if (!editor || !output || !charCount || !wordCount) return;
 
   const unicodeText = htmlToUnicode(editor.innerHTML);
-
   output.value = unicodeText;
 
-  // Cuenta caracteres Unicode reales, no unidades UTF-16
-  charCount.textContent = String(Array.from(unicodeText).length);
+  // Cuenta caracteres visibles (grafemas), no code points Unicode
+  const segmenter = new Intl.Segmenter("es", { granularity: "grapheme" });
+  const visibleCharacters = Array.from(segmenter.segment(unicodeText)).length;
+
+  charCount.textContent = String(visibleCharacters);
 
   const plainText = editor.innerText
     .replace(/\u00A0/g, " ")
