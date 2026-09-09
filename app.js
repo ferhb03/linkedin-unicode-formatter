@@ -354,8 +354,11 @@ function syncOutput() {
   if (!editor || !output || !charCount || !wordCount) return;
 
   const unicodeText = htmlToUnicode(editor.innerHTML);
+
   output.value = unicodeText;
-  charCount.textContent = String(unicodeText.length);
+
+  // Cuenta caracteres Unicode reales, no unidades UTF-16
+  charCount.textContent = String(Array.from(unicodeText).length);
 
   const plainText = editor.innerText
     .replace(/\u00A0/g, " ")
