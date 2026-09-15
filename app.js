@@ -317,10 +317,6 @@ function walkNode(node, style) {
   return out;
 }
 
-function isCombiningMark(ch) {
-  return /[\u0300-\u036f]/.test(ch);
-}
-
 function applyUnicodeStyle(text, style) {
   let mapper = null;
 
@@ -330,29 +326,29 @@ function applyUnicodeStyle(text, style) {
   else if (style.bold) mapper = styles.sansBold;
   else if (style.italic) mapper = styles.sansItalic;
 
+  // Texto sin formato: no se modifica
   if (!mapper) return text;
 
-  const decomposedText = Array.from(text.normalize("NFD"));
-  let result = "";
+  const optimizeForLinkedIn = linkedinMode
+    ? linkedinMode.checked
+    : true;
 
-  for (let i = 0; i < decomposedText.length; i++) {
-    const ch = decomposedText[i];
-    const next = decomposedText[i + 1];
+  let processedText;
 
-    // Caso especial:
-    // í = i + acento combinable.
-    // Para evitar que LinkedIn muestre mal el acento sobre la i,
-    // convertimos la i con formato y saltamos el acento.
-    if (ch === "i" && next && isCombiningMark(next)) {
-      result += mapper("i");
-      i++; // salta el acento combinable
-      continue;
-    }
-
-    result += mapper(ch);
+  if (optimizeForLinkedIn) {
+    // LinkedIn:
+    // elimina diacríticos del texto que tiene formato Unicode
+    // á → a, é → e, í → i, ó → o, ú → u, ü → u, ñ → n
+    processedText = text
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  } else {
+    // Uso Unicode general:
+    // conserva los acentos como caracteres combinables
+    processedText = text.normalize("NFD");
   }
 
-  return result;
+  return Array.from(processedText).map(mapper).join("");
 }
 
 // ---------- Sync Output ----------
@@ -734,7 +730,10 @@ if (copyBtn) {
         : true;
 
       if (optimizeForLinkedIn) {
-        textToCopy = textToCopy.replace(/\n\n/g, "\n\u200B\n");
+        textToCopy = textToCopy
+          .split("\n")
+          .map(line => line === "" ? "\u200B" : line)
+          .join("\n");
       }
 
       await navigator.clipboard.writeText(textToCopy);
