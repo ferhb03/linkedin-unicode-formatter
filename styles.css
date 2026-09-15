@@ -159,3 +159,16 @@ textarea {
   line-height: 1.5;
   margin-bottom: 14px;
 }
+
+.mode-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mode-option input {
+  cursor: pointer;
+}

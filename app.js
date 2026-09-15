@@ -25,6 +25,8 @@ const themeToggle = document.getElementById("themeToggle");
 
 const wordCount = document.getElementById("wordCount");
 
+const linkedinMode = document.getElementById("linkedinMode");
+
 function setTheme(mode) {
   const isLight = mode === "light";
   document.body.classList.toggle("theme-light", isLight);
@@ -40,6 +42,10 @@ function setTheme(mode) {
   const saved = localStorage.getItem("theme");
   setTheme(saved === "dark" ? "dark" : "light");
 })();
+
+if (linkedinMode) {
+  linkedinMode.addEventListener("change", syncOutput);
+}
 
 if (themeToggle) {
   themeToggle.addEventListener("click", () => {
@@ -721,7 +727,18 @@ if (iconSelect) {
 if (copyBtn) {
   copyBtn.addEventListener("click", async () => {
     try {
-      await navigator.clipboard.writeText(output.value);
+      let textToCopy = output.value;
+
+      const optimizeForLinkedIn = linkedinMode
+        ? linkedinMode.checked
+        : true;
+
+      if (optimizeForLinkedIn) {
+        textToCopy = textToCopy.replace(/\n\n/g, "\n\u200B\n");
+      }
+
+      await navigator.clipboard.writeText(textToCopy);
+
       const old = copyBtn.textContent;
       copyBtn.textContent = "Copiado";
       setTimeout(() => (copyBtn.textContent = old), 900);
