@@ -1,87 +1,45 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LinkedIn Unicode Formatter</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Dale estilo a tus publicaciones con LinkedIn Unicode Formatter. Aplicá negrita, cursiva y otros estilos, y copiá el resultado gratis.">
+  <title>LinkedIn Unicode Formatter · Herramientas de Fernando Benitez</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="wrap">
-    <h1>LinkedIn Unicode Formatter</h1>
-    <p class="muted">Formateá texto para LinkedIn usando Unicode (sin rich text real).</p>
-    <button id="themeToggle" type="button" class="theme-toggle" aria-label="Cambiar tema">
-      ☀️ Claro
-    </button>
+  <a class="skip-link" href="#editor">Ir al editor</a>
+  <header class="site-header wrap">
+    <a class="brand" href="./" aria-label="LinkedIn Unicode Formatter, inicio"><span class="brand-icon" aria-hidden="true">Aa</span><span>LinkedIn <strong>Formatter</strong><span class="brand-label">UNICODE</span></span></a>
+    <div class="header-actions"><a class="home-link" href="https://ferhb03.github.io/herramientas/">← Todas las herramientas</a><button id="themeToggle" type="button" class="theme-toggle" aria-label="Cambiar entre tema claro y oscuro">☀️ Claro</button></div>
   </header>
-
-  <main class="wrap grid">
-  <section class="panel">
-      <h2>Editor</h2>
-
-<div class="toolbar">
-  <button data-style="bold" type="button" title="Sans Bold Unicode">B</button>
-  <button data-style="italic" type="button" title="Sans Italic Unicode">I</button>
-  <button data-style="script" type="button" title="Script Unicode">S</button>
-  <button data-style="mono" type="button" title="Monospace Unicode">M</button>
-
-  <span class="sep"></span>
-
-  <select id="iconSelect" aria-label="Insertar ícono">
-    <option value="">Insertar ícono…</option>
-  </select>
-
-  <button id="separator" type="button" title="Insertar separador">Insertar separador</button>
-</div>
-
-<label class="mode-option">
-  <input id="linkedinMode" type="checkbox" checked />
-  Optimizar para LinkedIn
-</label>
-
-    <div id="editor" class="editor" contenteditable="true" spellcheck="true" data-placeholder="Escribí tu post acá…"></div>
-
-        <div class="meta">
-          <div class="counters">
-            <div>Caracteres: <strong id="charCount">0</strong></div>
-            <div>Palabras: <strong id="wordCount">0</strong></div>
-          </div>
-        
-          <div class="actions">
-            <button id="copyBtn" type="button">Copiar resultado</button>
-            <button id="clearFormat" type="button" title="Quitar formato (selección o todo)">Quitar formato</button>
-            <button id="clearBtn" type="button" class="ghost">Limpiar</button>
-          </div>
+  <main class="wrap">
+    <section class="intro" aria-labelledby="page-title"><span class="eyebrow">COMUNICACIÓN · ESTILOS UNICODE</span><h1 id="page-title">Dale forma a tus ideas.<br>Publicá con tu estilo.</h1><p>Aplicá estilos a tu texto y preparalo para compartir.<br>Listo para copiar y pegar en tus publicaciones de LinkedIn.</p></section>
+    <div class="grid">
+      <section class="panel editor-panel" aria-labelledby="editor-title">
+        <div class="panel-heading"><div><span class="step">01 / ESCRIBÍ</span><h2 id="editor-title">Tu publicación</h2></div><span class="type-pill">Editor</span></div>
+        <p class="panel-description" id="editor-help">Escribí o pegá tu texto. Seleccioná una parte para darle estilo.</p>
+        <div class="toolbar" role="group" aria-label="Opciones de formato">
+          <div class="format-buttons"><button data-style="bold" type="button" class="format-bold" title="Negrita Unicode" aria-label="Aplicar o quitar negrita">B</button><button data-style="italic" type="button" class="format-italic" title="Cursiva Unicode" aria-label="Aplicar o quitar cursiva">I</button><button data-style="script" type="button" class="format-script" title="Caligrafía Unicode" aria-label="Aplicar o quitar caligrafía">S</button><button data-style="mono" type="button" class="format-mono" title="Monoespaciado Unicode" aria-label="Aplicar o quitar monoespaciado">M</button></div>
+          <span class="sep" aria-hidden="true"></span>
+          <select id="iconSelect" aria-label="Insertar ícono"><option value="">Insertar ícono…</option></select>
+          <button id="separator" type="button" title="Insertar separador">Insertar separador</button>
         </div>
-    </section>
-
-    <section class="panel">
-      <h2>Resultado (copiar y pegar)</h2>
-      <textarea id="output" readonly placeholder="Acá aparece el texto ya formateado…"></textarea>
-      <p class="muted small">
-        Nota: algunas tipografías Unicode pueden verse diferente según dispositivo.
-      </p>
-    </section>
-  </main>
-  
-<footer class="wrap muted small">
-  <div class="unicode-note novelty-note">
-    🆕 Nuevo modo de optimización para LinkedIn.
-  </div>
-
-  <div class="unicode-note">
-  ⚠️ Al optimizar para LinkedIn, los acentos se eliminan únicamente del texto con formato Unicode para mejorar la compatibilidad entre dispositivos. También se preservan los espacios entre párrafos al copiar.
-  </div>
-
-  <div class="footer-info">
-    Hecho para publicar posts más legibles en LinkedIn usando Unicode.
-    <div class="build-info">
-      2026.09.15 — By Fernando Benitez
+        <label class="mode-option"><input id="linkedinMode" type="checkbox" checked aria-describedby="unicode-note">Optimizar para LinkedIn</label>
+        <div id="editor" class="editor" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="editor-title" aria-describedby="editor-help" spellcheck="true" data-placeholder="Escribí tu próxima publicación acá…"></div>
+        <div class="meta"><div class="counters"><span>Caracteres <strong id="charCount">0</strong></span><span>Palabras <strong id="wordCount">0</strong></span></div><div class="actions"><button id="clearFormat" type="button" class="text-button" title="Quitar formato de la selección o de todo el texto">Quitar formato</button><button id="clearBtn" type="button" class="text-button">Limpiar</button></div></div>
+      </section>
+      <section class="panel output-panel" aria-labelledby="output-title">
+        <div class="panel-heading"><div><span class="step">02 / COMPARTÍ</span><h2 id="output-title">Tu texto listo</h2></div><span class="type-pill">Resultado</span></div>
+        <p class="panel-description" id="output-help">El resultado se actualiza mientras escribís y aplicás formato.</p>
+        <textarea id="output" readonly aria-labelledby="output-title" aria-describedby="output-help" placeholder="Acá aparecerá tu texto con los estilos aplicados…"></textarea>
+        <div class="output-actions"><button id="copyBtn" type="button" class="primary-button">Copiar resultado</button><p class="copy-hint">Pegalo en LinkedIn y revisá cómo se ve antes de publicar.</p></div>
+      </section>
     </div>
-  </div>
-</footer>
-
+    <aside class="compatibility-note" aria-labelledby="compatibility-title"><span class="note-icon" aria-hidden="true">◎</span><div><h2 id="compatibility-title">Un detalle sobre los estilos Unicode</h2><p id="unicode-note">Al optimizar para LinkedIn, los acentos se eliminan solo del texto con formato Unicode. Los espacios entre párrafos se preservan al copiar. Algunos caracteres pueden verse diferentes según el dispositivo.</p></div></aside>
+  </main>
+  <footer class="site-footer wrap"><span>LinkedIn Unicode Formatter <span class="footer-dot">·</span> Por Fernando Benitez</span><a href="https://github.com/ferhb03/linkedin-unicode-formatter" target="_blank" rel="noopener noreferrer">Ver el proyecto en GitHub ↗</a></footer>
   <script src="app.js"></script>
-
 </body>
 </html>
